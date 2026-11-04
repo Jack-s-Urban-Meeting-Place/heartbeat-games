@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bird Lab</title>
+<!--
+  Bird lab: try out the crow (games/lib/crow.js) on its own, from any angle,
+  doing each of its actions, before it goes into a game.
+  Open this file in Chrome. Drag to turn the view, scroll to zoom.
+  For screenshots, settings can go in the address: ?action=flap&view=game&t=1.2&ui=0
+    action  glide, flap, bankL, bankR, land, perch, peck, stare, tour
+    view    game, behind, side, front, top, three
+    t       jump to this many seconds in, then pause      speed  0.25 to 1
+    player  1 or 2 (the accent colour)                     style  edges+tips, tips, edges, none
+    ui      0 hides the controls
+-->
+<style>
+  :root { --bg: #f3efe8; --ink: #1f1a24; --muted: #6c6472; --panel: rgba(255,255,255,.92); --p1: #e0662b; --p2: #7a4fd6; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: #cfe3f2; color: var(--ink); font-family: "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .panel { position: fixed; left: 16px; top: 16px; width: 250px; max-height: calc(100% - 32px); overflow: auto;
+           background: var(--panel); border-radius: 16px; padding: 14px 16px; box-shadow: 0 8px 30px rgba(0,0,0,.12); }
+  .panel h1 { font-size: 1.15rem; margin: 0 0 2px; }
+  .panel p { margin: 0 0 10px; color: var(--muted); font-size: .82rem; }
+  .panel h2 { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 12px 0 6px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+  button { font: inherit; font-size: .85rem; border: 2px solid #d9d2c7; background: #fff; color: var(--ink); border-radius: 999px;
+           padding: 5px 11px; cursor: pointer; }
+  button:hover { border-color: #a99f93; }
+  button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+  button kbd { font: inherit; opacity: .55; margin-left: 4px; }
+  select { font: inherit; font-size: .85rem; padding: 4px 8px; border-radius: 10px; border: 2px solid #d9d2c7; width: 100%; }
+  .status { position: fixed; right: 16px; bottom: 14px; font-size: .85rem; color: var(--ink); background: var(--panel);
+            border-radius: 999px; padding: 6px 14px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="panel" id="panel">
+  <h1>Bird lab: crow</h1>
+  <p>Drag to turn the view · scroll to zoom</p>
+  <h2>Action</h2>
+  <div class="row" id="actions"></div>
+  <h2>View</h2>
+  <div class="row" id="views"></div>
+  <h2>Speed</h2>
+  <div class="row" id="speeds"></div>
+  <h2>Player colour</h2>
+  <div class="row" id="players"></div>
+  <h2>Model</h2>
+  <div class="row" id="models"></div>
+  <h2>Look</h2>
+  <div class="row" id="looks"></div>
+  <h2>Colour on (black crow)</h2>
+  <select id="style">
+    <option value="edges+tips">Wing edges and finger tips</option>
+    <option value="tips">Finger tips only</option>
+    <option value="edges">Wing edges only</option>
+    <option value="none">None (all black)</option>
+  </select>
+</div>
+<div class="status" id="status"></div>
+
+<script src="../js/vendor/three.min.js"></script>
+<script>const HG = {};</script>
+<script src="../games/lib/crow-model.js"></script>   <!-- version 2's skin, made in Blender -->
+<script src="../games/lib/crow.js"></script>
+<script>
+// ---- Settings from the address bar ----
+const params = new URLSearchParams(location.search);
+const ACTIONS = {
+  glide: { label: "Glide", key: "1", controls: { mode: "fly", flap: 0, bank: 0, peck: 0, look: null } },
+  flap: { label: "Flap", key: "2", controls: { mode: "fly", flap: 1, bank: 0, peck: 0, look: null } },
+  bankL: { label: "Bank left", key: "3", controls: { mode: "fly", flap: 0, bank: -1, peck: 0, look: null } },
+  bankR: { label: "Bank right", key: "4", controls: { mode: "fly", flap: 0, bank: 1, peck: 0, look: null } },
+  land: { label: "Landing flare", key: "5", controls: { mode: "land", flap: 0, bank: 0, peck: 0, look: null } },
+  perch: { label: "Perched", key: "6", controls: { mode: "perch", flap: 0, bank: 0, peck: 0, look: null } },
+  peck: { label: "Peck", key: "8", controls: { mode: "perch", flap: 0, bank: 0, peck: 1, look: null } },
+  stare: { label: "Stare", key: "9", controls: { mode: "perch", flap: 0, bank: 0, peck: 0, look: 0.9 } },
+  tour: { label: "Tour", key: "7" }
+};
+// Camera views: [angle around (0 = from behind), height angle, distance]
+const VIEWS = {
+  game: { label: "Game view", sph: [0, 0.62, 1.9] },
+  behind: { label: "Behind", sph: [0, 0.12, 1.6] },
+  side: { label: "Side", sph: [Math.PI / 2, 0.08, 1.5] },
+  front: { label: "Front", sph: [Math.PI, 0.1, 1.5] },
+  top: { label: "Top", sph: [0, 1.5, 1.7] },
+  three: { label: "¾", sph: [0.75, 0.4, 1.6] }
+};
+const TOUR = ["flap", "glide", "bankL", "bankR", "flap", "land", "perch", "perch", "flap"];
+const PLAYERS = { 1: "#e0662b", 2: "#7a4fd6" };
+
+// ---- The scene ----
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xd8e6f0);
+scene.fog = new THREE.Fog(0xd8e6f0, 6, 18);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.02, 60);
+scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x6b5a48, 1.25));
+const sun = new THREE.DirectionalLight(0xffe8c8, 2.6);
+sun.position.set(-0.55, 0.65, -0.5); scene.add(sun);
+
+// Ground, with lines that slide past while the crow flies, so it feels like moving.
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x8fb36b, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; scene.add(ground);
+const lines = new THREE.GridHelper(40, 80, 0x77985a, 0x7fa060); lines.position.y = 0.002; scene.add(lines);
+const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18, depthWrite: false }));
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.004; shadow.scale.set(1, 0.4, 1); scene.add(shadow);
+
+// The crow: version 2 (the Blender-made skin) or version 1 (simple shapes), black with the
+// player's colour on it, or solid in the player's colour as in the games.
+let crow, model = params.get("model") === "v1" ? "v1" : "v2", look = params.get("look") === "solid" ? "solid" : "black";
+function makeCrow() {
+  if (crow) { scene.remove(crow.root); crow.dispose(); }
+  const colour = PLAYERS[params.get("player") || player || 1];
+  crow = new HG.Crow(look === "solid" ? { colour, model } : { accent: colour, style: document.getElementById("style").value || "edges+tips", model });
+  scene.add(crow.root);
+  if (window.lab) window.lab.crow = crow;
+  try { if (ACTIONS[action].controls) Object.assign(crow.controls, ACTIONS[action].controls); } catch (e) { /* not set up yet */ }
+}
+document.getElementById("style").value = params.get("style") || "edges+tips";
+var player;
+makeCrow();
+
+// ---- State ----
+let action = ACTIONS[params.get("action")] ? params.get("action") : "flap";
+let view = VIEWS[params.get("view")] ? params.get("view") : "game";
+let speed = params.has("t") ? 0 : Number(params.get("speed") || 1);
+let sph = VIEWS[view].sph.slice();
+let altitude = 0.9, scroll = 0, tourStep = 0, tourTime = 0;
+
+function setAction(name) {
+  action = name;
+  if (name === "tour") { tourStep = 0; tourTime = 0; Object.assign(crow.controls, ACTIONS[TOUR[0]].controls); }
+  else Object.assign(crow.controls, ACTIONS[name].controls);
+  refresh();
+}
+function setView(name) { view = name; sph = VIEWS[name].sph.slice(); refresh(); }
+
+// ---- Controls panel ----
+function buttons(id, items, onClick, isOn) {
+  const box = document.getElementById(id); box.innerHTML = "";
+  for (const [key, item] of Object.entries(items)) {
+    const b = document.createElement("button");
+    b.innerHTML = item.label + (item.key ? "<kbd>" + item.key + "</kbd>" : "");
+    b.onclick = () => onClick(key); b.dataset.key = key; box.appendChild(b);
+  }
+  box.refresh = () => [...box.children].forEach((b) => b.classList.toggle("on", isOn(b.dataset.key)));
+  return box;
+}
+const panels = [
+  buttons("actions", ACTIONS, setAction, (k) => k === action),
+  buttons("views", VIEWS, setView, (k) => k === view),
+  buttons("speeds", { 1: { label: "1×" }, 0.5: { label: "½×" }, 0.25: { label: "¼×" }, 0: { label: "Pause" } }, (k) => { speed = Number(k); refresh(); }, (k) => Number(k) === speed),
+  buttons("players", { 1: { label: "Player 1" }, 2: { label: "Player 2" } }, (k) => { player = k; params.delete("player"); makeCrow(); refresh(); }, (k) => k === player),
+  buttons("models", { v2: { label: "Version 2 (Blender)" }, v1: { label: "Version 1" } }, (k) => { model = k; makeCrow(); refresh(); }, (k) => k === model),
+  buttons("looks", { black: { label: "Black + colour" }, solid: { label: "Solid colour (games)" } }, (k) => { look = k; makeCrow(); refresh(); }, (k) => k === look)
+];
+player = params.get("player") || "1";
+const styleBox = document.getElementById("style");
+styleBox.onchange = () => crow.setStyle(styleBox.value);
+if (params.get("ui") === "0") { document.getElementById("panel").classList.add("hidden"); document.getElementById("status").classList.add("hidden"); }
+function refresh() {
+  panels.forEach((p) => p.refresh());
+  document.getElementById("status").textContent = ACTIONS[action].label + (action === "tour" ? ": " + ACTIONS[TOUR[tourStep]].label : "") + " · " + VIEWS[view].label;
+}
+addEventListener("keydown", (e) => {
+  const hit = Object.entries(ACTIONS).find(([, a]) => a.key === e.key);
+  if (hit) setAction(hit[0]);
+  if (e.key === " ") { speed = speed ? 0 : 1; refresh(); e.preventDefault(); }
+});
+
+// Drag to turn the view, scroll to zoom.
+let drag = null;
+renderer.domElement.addEventListener("pointerdown", (e) => { drag = [e.clientX, e.clientY]; renderer.domElement.setPointerCapture(e.pointerId); });
+renderer.domElement.addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  sph[0] -= (e.clientX - drag[0]) * 0.008; sph[1] = Math.max(-1.2, Math.min(1.55, sph[1] + (e.clientY - drag[1]) * 0.006));
+  drag = [e.clientX, e.clientY];
+});
+addEventListener("pointerup", () => (drag = null));
+renderer.domElement.addEventListener("wheel", (e) => { sph[2] = Math.max(0.5, Math.min(8, sph[2] * (1 + Math.sign(e.deltaY) * 0.1))); e.preventDefault(); }, { passive: false });
+
+// ---- Each frame ----
+function step(dt) {
+  if (action === "tour") {
+    tourTime += dt;
+    if (tourTime > 2.6) { tourTime = 0; tourStep = (tourStep + 1) % TOUR.length; Object.assign(crow.controls, ACTIONS[TOUR[tourStep]].controls); refresh(); }
+  }
+  crow.update(dt);
+  // Height: up in the air when flying, sinking while landing, standing on the ground when perched.
+  const w = crow.weights;
+  const target = w.fly * 0.9 + w.land * 0.32 + w.perch * -crow.footHeight();
+  altitude += (target - altitude) * Math.min(1, dt * 3);
+  crow.root.position.y = altitude;
+  // The ground slides past while flying.
+  scroll = (scroll + dt * 2.5 * (w.fly + w.land * 0.3)) % 0.5;
+  lines.position.z = scroll;
+  shadow.scale.set(1 - altitude * 0.25, 0.4 - altitude * 0.1, 1);
+}
+
+function render() {
+  const w = innerWidth, h = innerHeight;
+  if (renderer.domElement.width !== Math.round(w * renderer.getPixelRatio())) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+  // The crow faces away from us (-z); angle 0 looks at it from behind.
+  const [az, el, dist] = sph, target = new THREE.Vector3(0, altitude, 0);
+  camera.position.set(target.x + Math.sin(az) * Math.cos(el) * dist, target.y + Math.sin(el) * dist, target.z + Math.cos(az) * Math.cos(el) * dist);
+  camera.lookAt(target);
+  renderer.render(scene, camera);
+}
+
+setAction(action);
+setView(view);
+// For screenshots: jump straight to a moment, then hold still.
+if (params.has("t")) { const t = Number(params.get("t")); for (let s = 0; s < t; s += 1 / 120) step(1 / 120); }
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (speed > 0) step(dt * speed);
+  render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+// For testing: lab.setCamera(angle around, height angle, distance) places the camera exactly.
+window.lab = { crow, step, setAction, setView, setCamera: (az, el, dist) => { sph = [az, el, dist]; } };
+window.lab.makeCrow = makeCrow;
+</script>
+</body>
+</html>

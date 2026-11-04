@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two-player test tool | P1:idle P2:idle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+  :root {
+    --bg: #eef2f7; --ink: #1b2433; --muted: #5f6b7c; --line: #d3dae4; --panel: #ffffff;
+    --pulse: #c8102e; --x: #d64545; --y: #2a9a5a; --z: #1f6fd1;
+    --p1: #e0662b; --p2: #7a4fd6;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141b24; --ink: #e6ebf2; --muted: #93a0b2; --line: #2a3442; --panel: #1b2430;
+      --pulse: #ff5a6e; --x: #ff6b6b; --y: #4fd18b; --z: #5aa2ff;
+      --p1: #ff8a50; --p2: #a989ff;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5; }
+  main { max-width: 76rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+  h2 { font-size: 1rem; font-weight: 600; margin: 2rem 0 .5rem; }
+  .badge { font-size: .75rem; font-weight: 600; vertical-align: middle; padding: .15rem .55rem; border-radius: 999px;
+           background: color-mix(in srgb, var(--pulse) 14%, transparent); color: var(--pulse); margin-left: .4rem; }
+  .controls { display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: .95rem; }
+  .controls select { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: .3rem .5rem; }
+  .controls input[type=range] { accent-color: var(--z); width: 9rem; }
+  .controls input[type=radio] { accent-color: var(--z); }
+  .warning { margin: 1rem 0 0; padding: .75rem 1rem; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); font-size: .95rem; }
+
+  .setup { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: 14px; background: var(--panel); border: 2px solid var(--line); }
+  .setup.done { border-color: var(--y); }
+  .setup-title { font-size: 1.6rem; font-weight: 800; }
+  .setup.done .setup-title { color: var(--y); }
+  .setup-rows { display: flex; gap: 2rem; flex-wrap: wrap; margin-top: .35rem; font-size: 1.15rem; }
+  .setup-row { display: inline-flex; align-items: center; gap: .5rem; }
+  .dot { width: .8rem; height: .8rem; border-radius: 50%; background: var(--line); }
+  .setup-row[data-state="connecting"] .dot { background: var(--z); animation: blink 1s ease-in-out infinite; }
+  .setup-row[data-state="ready"] .dot { background: var(--y); }
+  .setup-row[data-state="failed"] .dot { background: var(--pulse); }
+  @keyframes blink { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .setup-row .dot { animation: none !important; } }
+  .players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; margin-top: 1.25rem; }
+  @media (max-width: 60rem) { .players { grid-template-columns: 1fr; } }
+  .player { background: var(--panel); border: 1px solid var(--line); border-top: 6px solid var(--player); border-radius: 14px; padding: 1rem 1.25rem 1.25rem; }
+  .player[data-n="1"] { --player: var(--p1); }
+  .player[data-n="2"] { --player: var(--p2); }
+  .player-head { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+  .player-name { font-size: 1.3rem; font-weight: 800; color: var(--player); margin-right: auto; }
+  .id-field { display: flex; align-items: center; gap: .4rem; color: var(--muted); font-size: .9rem; }
+  .id-field input { font: inherit; width: 7.5rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink);
+                    background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .3rem .5rem; }
+  button { font: inherit; font-weight: 600; padding: .5rem 1rem; border-radius: 999px;
+           border: 2px solid var(--player, var(--pulse)); background: var(--player, var(--pulse)); color: #fff; cursor: pointer; }
+  button.secondary { background: transparent; color: var(--player, var(--pulse)); }
+  button.quiet { border-color: var(--line); background: transparent; color: var(--ink); font-weight: 400; padding: .3rem .8rem; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+  .status { color: var(--muted); margin: .75rem 0 0; min-height: 3em; font-size: .95rem; }
+  .settle { margin-top: .5rem; }
+
+  .body { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 1rem; margin-top: .75rem; align-items: start; }
+  @media (max-width: 32rem) { .body { grid-template-columns: 1fr; } }
+  .stage { height: 14rem; perspective: 800px; display: grid; place-items: center; }
+  .view { transform-style: preserve-3d; transform: rotateX(-22deg) rotateY(-32deg); }
+  .cube { --s: 3.5rem; width: calc(var(--s) * 2); height: calc(var(--s) * 2); position: relative; transform-style: preserve-3d; }
+  .face { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 1.1rem;
+          border: 2px solid rgba(0,0,0,.25); border-radius: 10px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .face.px { background: var(--x); transform: rotateY(90deg) translateZ(var(--s)); }
+  .face.nx { background: color-mix(in srgb, var(--x) 55%, #333); transform: rotateY(-90deg) translateZ(var(--s)); }
+  .face.py { background: var(--y); transform: rotateX(90deg) translateZ(var(--s)); }
+  .face.ny { background: color-mix(in srgb, var(--y) 55%, #333); transform: rotateX(-90deg) translateZ(var(--s)); }
+  .face.pz { background: var(--z); transform: translateZ(var(--s)); }
+  .face.nz { background: color-mix(in srgb, var(--z) 55%, #333); transform: rotateY(180deg) translateZ(var(--s)); }
+  .tilt { font-variant-numeric: tabular-nums; text-align: center; font-size: .9rem; color: var(--muted); }
+  .cube-col { display: grid; gap: .5rem; justify-items: center; }
+
+  .values { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+  .axis-label { font-size: .8rem; font-weight: 600; }
+  .axis-value { font-size: 1.6rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .x { color: var(--x); } .y { color: var(--y); } .z { color: var(--z); }
+  canvas { width: 100%; height: 150px; display: block; margin-top: .5rem; }
+  .readout { color: var(--muted); font-size: .8rem; margin-top: .35rem; font-variant-numeric: tabular-nums; }
+
+  #log { margin: 0; padding: .75rem 1rem .75rem 2.25rem; background: var(--panel); border: 1px solid var(--line);
+         border-radius: 12px; font-size: .85rem; color: var(--muted); max-height: 14rem; overflow-y: auto; }
+  #log li.error { color: var(--pulse); font-weight: 600; }
+  #log .who { font-weight: 700; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Two-player motion <span class="badge">fast mode · heart rate off</span></h1>
+    <div class="controls">
+      <label>Sample rate
+        <select id="rateSelect">
+          <option value="52">52 Hz</option>
+          <option value="104">104 Hz</option>
+          <option value="208">208 Hz</option>
+          <option value="416" selected>416 Hz</option>
+        </select>
+      </label>
+      <span><label><input type="radio" name="mode" id="modeLow" checked> Low delay</label>
+            <label><input type="radio" name="mode" id="modeSmooth"> Smooth</label></span>
+      <label>Smoothing <input type="range" id="smoothing" min="0.02" max="0.5" step="0.01" value="0.12"></label>
+    </div>
+  </header>
+  <div class="setup" id="setup" role="status" aria-live="polite">
+    <div class="setup-title" id="setupTitle">Getting ready…</div>
+    <div class="setup-rows">
+      <span class="setup-row" id="setupP1"><span class="dot"></span>Player 1: waiting</span>
+      <span class="setup-row" id="setupP2"><span class="dot"></span>Player 2: waiting</span>
+    </div>
+  </div>
+  <p class="warning">Connect one player at a time: the other button waits until the first sensor is streaming. Select <strong>Disconnect</strong> on each player when you’re done, so the sensors return to normal heart rate mode. If you close the page instead, turn the sensors off and on.</p>
+
+  <div class="players">
+    <section class="player" data-n="1" id="player1" aria-label="Player 1"></section>
+    <section class="player" data-n="2" id="player2" aria-label="Player 2"></section>
+  </div>
+
+  <h2>Connection log</h2>
+  <ol id="log"><li>Nothing yet.</li></ol>
+</main>
+
+<template id="playerTemplate">
+  <div class="player-head">
+    <span class="player-name"></span>
+    <label class="id-field">Sensor ID <input class="sensor-id" maxlength="8" spellcheck="false" autocomplete="off"></label>
+    <button class="connect">Connect</button>
+    <button class="disconnect secondary" hidden>Disconnect</button>
+  </div>
+  <p class="status">Not connected.</p>
+  <div class="body">
+    <div class="cube-col">
+      <div class="stage"><div class="view"><div class="cube">
+        <div class="face px">+X</div><div class="face nx">−X</div>
+        <div class="face py">+Y</div><div class="face ny">−Y</div>
+        <div class="face pz">+Z</div><div class="face nz">−Z</div>
+      </div></div></div>
+      <div class="tilt">Tilt: waiting</div>
+      <button class="quiet level">Set as level</button>
+    </div>
+    <div>
+      <div class="values">
+        <div><div class="axis-label x">X mG</div><div class="axis-value x vx">—</div></div>
+        <div><div class="axis-label y">Y mG</div><div class="axis-value y vy">—</div></div>
+        <div><div class="axis-label z">Z mG</div><div class="axis-value z vz">—</div></div>
+      </div>
+      <canvas class="chart" aria-label="Acceleration over the last 5 seconds"></canvas>
+      <div class="readout">—</div>
+    </div>
+  </div>
+</template>
+
+<script>
+// ============================================================================
+// Polar Measurement Data (PMD) protocol, from Polar's SDK documentation
+// ============================================================================
+const PMD_SERVICE = "fb005c80-02e7-f387-1cad-8acd2d8df0c8";
+const PMD_CONTROL = "fb005c81-02e7-f387-1cad-8acd2d8df0c8";
+const PMD_DATA    = "fb005c82-02e7-f387-1cad-8acd2d8df0c8";
+const ACC = 2, SDK_MODE = 9;
+const CMD_GET_SETTINGS = 1, CMD_START = 2, CMD_STOP = 3, CMD_GET_FULL_SETTINGS = 4;
+const SETTING_SIZES = { 0: 2, 1: 2, 2: 2, 3: 4, 4: 1, 5: 4, 6: 16, 7: 1, 8: 1, 9: 2, 10: 4, 11: 4, 12: 1 };
+const SETTING_NAMES = { 0: "sample rate", 1: "resolution", 2: "range", 4: "channels", 5: "factor" };
+const STATUS_NAMES = ["success", "invalid op code", "invalid measurement type", "not supported", "invalid length",
+  "invalid parameter", "already running", "invalid resolution", "invalid sample rate", "invalid range",
+  "invalid MTU", "invalid number of channels", "invalid state", "device in charger"];
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const bytesOf = (dataView) => new Uint8Array(dataView.buffer.slice(dataView.byteOffset, dataView.byteOffset + dataView.byteLength));
+const unsignedLE = (b) => b.reduce((value, byte, i) => value + byte * 2 ** (8 * i), 0);
+const normalise = (v) => { const m = Math.hypot(...v) || 1; return v.map((x) => x / m); };
+const multiply = (A, B) => A.map((row) => [0, 1, 2].map((j) => row[0] * B[0][j] + row[1] * B[1][j] + row[2] * B[2][j]));
+const transpose = (A) => [0, 1, 2].map((i) => [0, 1, 2].map((j) => A[j][i]));
+
+// Proven helpers, shared with the single-sensor pages
+function readSignedLE(bytes, offset, size) {
+  let value = 0;
+  for (let i = 0; i < size; i++) value |= bytes[offset + i] << (8 * i);
+  const bits = size * 8;
+  if (bits < 32 && (value & (1 << (bits - 1)))) value -= 2 ** bits;
+  return value;
+}
+
+function parseDeltaFrames(bytes, channels, resolution) {
+  const refSize = Math.ceil(resolution / 8);
+  let offset = 0, last = [];
+  for (let c = 0; c < channels; c++) { last.push(readSignedLE(bytes, offset, refSize)); offset += refSize; }
+  const samples = [last];
+  while (offset + 1 < bytes.length) {
+    const width = bytes[offset++], count = bytes[offset++];
+    let bit = 0;
+    for (let s = 0; s < count; s++) {
+      const next = [];
+      for (let c = 0; c < channels; c++) {
+        let delta = 0;
+        for (let i = 0; i < width; i++, bit++) delta |= ((bytes[offset + (bit >> 3)] >> (bit & 7)) & 1) << i;
+        if (width > 0 && (delta & (1 << (width - 1)))) delta -= 2 ** width;
+        next.push(last[c] + delta);
+      }
+      samples.push(next);
+      last = next;
+    }
+    offset += Math.ceil((width * count * channels) / 8);
+  }
+  return samples;
+}
+
+function parseSettings(bytes) {
+  const out = {};
+  let offset = 0;
+  while (offset + 1 < bytes.length) {
+    const type = bytes[offset++], count = bytes[offset++], size = SETTING_SIZES[type];
+    if (size === undefined) break;
+    out[type] = [];
+    for (let i = 0; i < count; i++) { out[type].push(bytes.slice(offset, offset + size)); offset += size; }
+  }
+  return out;
+}
+
+function describeSettings(settings) {
+  return Object.keys(settings).filter((t) => t !== "5")
+    .map((t) => (SETTING_NAMES[t] || "type " + t) + " " + settings[t].map(unsignedLE).join("/"))
+    .join(", ");
+}
+
+function chooseSettings(available, preferredRate = 52) {
+  const pick = (type, preferred, fallback) => {
+    const values = (available[type] || []).map(unsignedLE);
+    if (!values.length) return null;
+    return values.includes(preferred) ? preferred : fallback(values);
+  };
+  const chosen = [
+    [0, pick(0, preferredRate, (v) => v.reduce((a, b) => Math.abs(b - preferredRate) < Math.abs(a - preferredRate) ? b : a))],
+    [1, pick(1, 16, (v) => Math.max(...v))],     // resolution (bits)
+    [2, pick(2, 8, (v) => Math.max(...v))],      // range (G)
+    [4, pick(4, 3, (v) => Math.max(...v))]       // channels
+  ].filter(([, value]) => value !== null);
+  const bytes = [];
+  for (const [type, value] of chosen) {
+    bytes.push(type, 1);
+    for (let i = 0; i < SETTING_SIZES[type]; i++) bytes.push((value >> (8 * i)) & 0xFF);
+  }
+  const rateEntry = chosen.find(([t]) => t === 0);
+  return { bytes, summary: chosen.map(([t, v]) => SETTING_NAMES[t] + " " + v).join(", "), rate: rateEntry ? rateEntry[1] : 52 };
+}
+
+function rotationBetween(a, b) {               // rotation matrix taking unit vector a onto unit vector b
+  const v = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const c = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  if (c < -0.9999) return [[1, 0, 0], [0, -1, 0], [0, 0, -1]];   // upside down: flip about X
+  const k = 1 / (1 + c);
+  return [
+    [v[0] * v[0] * k + c,    v[0] * v[1] * k - v[2], v[0] * v[2] * k + v[1]],
+    [v[1] * v[0] * k + v[2], v[1] * v[1] * k + c,    v[1] * v[2] * k - v[0]],
+    [v[2] * v[0] * k - v[1], v[2] * v[1] * k + v[0], v[2] * v[2] * k + c]
+  ];
+}
+
+// Turns one motion packet into [x, y, z] samples in milli-G (or null if it isn't motion).
+function decodeAccFrame(b, factor) {
+  if (b.length < 10 || (b[0] & 0x3F) !== ACC) return null;
+  const frameType = b[9] & 0x7F, compressed = (b[9] & 0x80) !== 0, content = b.subarray(10);
+  if (compressed) {
+    const scale = frameType === 0 ? factor * 1000 : factor;
+    return parseDeltaFrames(content, 3, 16).map((s) => s.map((v) => v * scale));
+  }
+  const size = frameType === 0 ? 1 : frameType === 1 ? 2 : 3, samples = [];
+  for (let o = 0; o + 3 * size <= content.length; o += 3 * size) {
+    samples.push([readSignedLE(content, o, size), readSignedLE(content, o + size, size), readSignedLE(content, o + 2 * size, size)]);
+  }
+  return samples;
+}
+
+// ============================================================================
+// PolarSensor: one connection to one sensor. Each player gets their own.
+// The page supplies handlers: log, status, waitForSettle, samples, started, disconnected.
+// ============================================================================
+class PolarSensor {
+  constructor(id, handlers) {
+    this.id = id; this.h = handlers;
+    this.device = null; this.controlPoint = null; this.pending = null; this.hrWaiter = null;
+    this.connecting = false; this.sdkMode = false; this.factor = 1; this.rate = 52;
+  }
+
+  // Must be called straight from a click: Chrome only opens its picker for a user action.
+  async connect(rate) {
+    if (!navigator.bluetooth) throw new Error("This browser can't use Bluetooth. Open the page in Chrome or Edge.");
+    this.device = await navigator.bluetooth.requestDevice({
+      filters: [{ name: "Polar Sense " + this.id }],
+      optionalServices: ["heart_rate", PMD_SERVICE]
+    });
+    this.h.log("Selected " + this.device.name + ".");
+    this.device.ongattserverdisconnected = () => this.onDisconnected();
+    this.connecting = true;
+    try {
+      for (let attempt = 1; ; attempt++) {
+        try {
+          await this.setUp(rate);
+          return;
+        } catch (err) {
+          this.h.log("Attempt " + attempt + " failed: " + err.name + ": " + err.message, true);
+          if (this.device.gatt.connected) this.device.gatt.disconnect();
+          // After pairing has happened, starting over would restart the popups, so stop.
+          if (err.afterHeartRate || attempt >= 3) throw err;
+          await wait(1000 * attempt);
+        }
+      }
+    } finally {
+      this.connecting = false;
+    }
+  }
+
+  async setUp(rate) {
+    this.h.log("Connecting…");
+    this.h.status("Connecting. If Windows asks to pair, select Allow.");
+    const server = await this.device.gatt.connect();
+    // A heart rate reading only arrives once Windows pairing has gone through.
+    const hrChar = await (await server.getPrimaryService("heart_rate")).getCharacteristic("heart_rate_measurement");
+    // If the sensor was left in fast mode it sends no heart rate, so don't wait forever.
+    const firstReading = new Promise((resolve) => {
+      this.hrWaiter = resolve;
+      setTimeout(() => { if (this.hrWaiter === resolve) { this.hrWaiter = null; resolve(false); } }, 25000);
+    });
+    hrChar.oncharacteristicvaluechanged = () => {
+      if (this.hrWaiter) { const resolve = this.hrWaiter; this.hrWaiter = null; resolve(true); }
+    };
+    await hrChar.startNotifications();
+    if (await firstReading) this.h.log("Paired. Giving Windows time to finish before starting fast motion…");
+    else this.h.log("No heart rate arrived (the sensor may still be in fast mode from last time). Trying motion anyway…");
+    await this.h.waitForSettle(150);
+    try {
+      await this.startMotion(server, rate);
+    } catch (err) {
+      err.afterHeartRate = true;
+      throw err;
+    }
+  }
+
+  async startMotion(server, rate) {
+    if (!this.device.gatt.connected) throw new Error("The sensor disconnected while waiting for pairing.");
+    this.h.log("Opening Polar's measurement service…");
+    const pmd = await server.getPrimaryService(PMD_SERVICE);
+    this.controlPoint = await pmd.getCharacteristic(PMD_CONTROL);
+    const dataChar = await pmd.getCharacteristic(PMD_DATA);
+    this.controlPoint.oncharacteristicvaluechanged = (e) => this.onControlPoint(e);
+    await this.controlPoint.startNotifications();
+    dataChar.oncharacteristicvaluechanged = (e) => {
+      const samples = decodeAccFrame(bytesOf(e.target.value), this.factor);
+      if (samples && samples.length) this.h.samples(samples);
+    };
+    await dataChar.startNotifications();
+
+    try { await this.sendCommand([CMD_STOP, ACC]); } catch (err) { /* nothing was running */ }
+    this.h.log("Switching to fast motion mode (SDK mode)…");
+    try { await this.sendCommand([CMD_START, SDK_MODE]); }
+    catch (err) { if (err.status !== 6) throw err; this.h.log("It was already in fast motion mode."); }
+    this.sdkMode = true;
+    await this.startAcc(rate);
+  }
+
+  async startAcc(rate) {
+    let response;
+    try { response = await this.sendCommand([CMD_GET_FULL_SETTINGS, ACC]); }
+    catch (err) { response = await this.sendCommand([CMD_GET_SETTINGS, ACC]); }
+    const { bytes, summary, rate: chosen } = chooseSettings(parseSettings(response.params), rate);
+    let started;
+    try { started = await this.sendCommand([CMD_START, ACC, ...bytes]); }
+    catch (err) {
+      if (err.status !== 6) throw err;
+      await this.sendCommand([CMD_STOP, ACC]);
+      started = await this.sendCommand([CMD_START, ACC, ...bytes]);
+    }
+    const settings = parseSettings(started.params);
+    this.factor = settings[5] ? new DataView(settings[5][0].buffer).getFloat32(0, true) : 1;
+    this.rate = chosen;
+    this.h.log("Streaming motion (" + summary + ").");
+    this.h.started(chosen);
+  }
+
+  async changeRate(rate) {
+    if (!this.sdkMode || !this.device || !this.device.gatt.connected) return;
+    this.h.log("Changing to " + rate + " Hz…");
+    await this.sendCommand([CMD_STOP, ACC]);
+    await this.startAcc(rate);
+  }
+
+  async disconnect() {
+    if (this.device && this.device.gatt.connected && this.controlPoint && this.sdkMode) {
+      this.h.log("Switching back to normal mode…");
+      try { await this.sendCommand([CMD_STOP, ACC]); } catch (err) {}
+      try { await this.sendCommand([CMD_STOP, SDK_MODE]); this.sdkMode = false; this.h.log("Back in normal mode; heart rate is on again."); }
+      catch (err) { this.h.log("Couldn't switch back: " + err.message + " Turn the sensor off and on to reset it.", true); }
+    }
+    if (this.device && this.device.gatt.connected) this.device.gatt.disconnect();
+  }
+
+  onDisconnected() {
+    this.h.log("Connection closed.", !this.connecting);
+    if (this.connecting) return;
+    this.sdkMode = false;
+    this.h.disconnected();
+  }
+
+  onControlPoint(event) {
+    const d = bytesOf(event.target.value);
+    if (d[0] !== 0xF0) return;
+    const response = { status: d[3], params: d.length > 5 ? d.slice(5) : new Uint8Array() };
+    if (this.pending) { const resolve = this.pending; this.pending = null; resolve(response); }
+  }
+
+  async sendCommand(bytes) {
+    const answer = new Promise((resolve, reject) => {
+      this.pending = resolve;
+      setTimeout(() => { if (this.pending === resolve) { this.pending = null; reject(new Error("The sensor didn't answer in time.")); } }, 6000);
+    });
+    const data = new Uint8Array(bytes);
+    if (this.controlPoint.writeValueWithResponse) await this.controlPoint.writeValueWithResponse(data);
+    else await this.controlPoint.writeValue(data);
+    const response = await answer;
+    if (response.status !== 0) {
+      const err = new Error("The sensor refused the request (" + (STATUS_NAMES[response.status] || "error " + response.status) + ").");
+      err.status = response.status;
+      throw err;
+    }
+    return response;
+  }
+}
+
+// ============================================================================
+// Shared page controls
+// ============================================================================
+const CHART_SECONDS = 5;
+const DEFAULT_IDS = { 1: "22B4EA3A", 2: "22B27C35" };
+const selectedRate = () => Number(document.getElementById("rateSelect").value);
+const lowDelay = () => document.getElementById("modeLow").checked;
+const smoothing = () => Number(document.getElementById("smoothing").value);
+let busyPlayer = null;               // the player currently connecting, if any
+
+function log(who, message, isError = false) {
+  const list = document.getElementById("log");
+  if (list.dataset.started !== "yes") { list.innerHTML = ""; list.dataset.started = "yes"; }
+  const item = document.createElement("li");
+  const tag = document.createElement("span");
+  tag.className = "who";
+  tag.style.color = "var(--p" + who + ")";
+  tag.textContent = "P" + who + " ";
+  item.append((performance.now() / 1000).toFixed(1) + "s  ", tag, message);
+  if (isError) item.className = "error";
+  list.appendChild(item);
+  list.scrollTop = list.scrollHeight;
+}
+
+function savedId(n) {
+  try { return localStorage.getItem("polar-sensor-id-" + n) || DEFAULT_IDS[n]; } catch (err) { return DEFAULT_IDS[n]; }
+}
+function saveId(n, id) {
+  try { localStorage.setItem("polar-sensor-id-" + n, id); } catch (err) { /* not essential */ }
+}
+
+// ============================================================================
+// Player: one panel with its sensor, cube, chart and playback.
+// ============================================================================
+class Player {
+  constructor(n) {
+    this.n = n;
+    this.root = document.getElementById("player" + n);
+    this.root.appendChild(document.getElementById("playerTemplate").content.cloneNode(true));
+    const q = (sel) => this.root.querySelector(sel);
+    this.el = {
+      name: q(".player-name"), id: q(".sensor-id"), connect: q(".connect"), disconnect: q(".disconnect"),
+      status: q(".status"), cube: q(".cube"), tilt: q(".tilt"), level: q(".level"),
+      vx: q(".vx"), vy: q(".vy"), vz: q(".vz"), chart: q(".chart"), readout: q(".readout")
+    };
+    this.el.name.textContent = "Player " + n;
+    this.el.id.value = savedId(n);
+    this.el.connect.addEventListener("click", () => this.connect());
+    this.el.disconnect.addEventListener("click", () => this.sensor && this.sensor.disconnect());
+    this.el.level.addEventListener("click", () => this.toggleLevel());
+    this.sensor = null;
+    this.state = "idle";
+    this.reset(52);
+  }
+
+  setState(state, label) {
+    this.state = state;
+    this.stateLabel = label;
+    updateSetup();
+  }
+
+  reset(rate) {
+    this.rate = rate;
+    this.queue = []; this.series = [[], [], []]; this.arrivals = [];
+    this.smoothed = null; this.display = this.display || null;
+    this.bundleSize = 26; this.bundleInterval = null; this.lastBundle = null;
+    this.carry = 0; this.lastFrame = null;
+  }
+
+  status(text) { this.el.status.textContent = text; }
+
+  async connect() {
+    const id = this.el.id.value.trim().toUpperCase();
+    if (!/^[0-9A-F]{8}$/.test(id)) { this.status("Enter the 8-character sensor ID shown after “Polar Sense” (it’s printed on the sensor)."); return; }
+    this.el.id.value = id;
+    saveId(this.n, id);
+    busyPlayer = this; updateButtons();
+    this.setState("connecting", "connecting…");
+    this.sensor = new PolarSensor(id, {
+      log: (m, e) => log(this.n, m, e),
+      status: (t) => this.status(t),
+      waitForSettle: (s) => this.waitForSettle(s),
+      samples: (s) => this.addSamples(s),
+      started: (rate) => {
+        this.reset(rate);
+        this.status("Streaming at " + rate + " Hz. Move the sensor and watch the cube.");
+        this.el.connect.hidden = true; this.el.disconnect.hidden = false;
+        this.setState("ready", "ready ✓");
+        if (busyPlayer === this) { busyPlayer = null; updateButtons(); }
+      },
+      disconnected: () => { this.onDisconnected("Disconnected."); this.setState("idle", "disconnected"); }
+    });
+    try {
+      await this.sensor.connect(selectedRate());
+    } catch (err) {
+      if (err.name === "NotFoundError") this.status("Sensor " + id + " wasn’t selected or wasn’t found. Is it switched on, with its blue side light?");
+      else this.status("Couldn’t connect: " + err.message + " Select Connect to try again.");
+      this.onDisconnected(null);
+      this.setState("failed", "not connected. Check the sensor is on (blue side light)");
+    }
+  }
+
+  onDisconnected(message) {
+    if (message) this.status(message);
+    this.el.connect.hidden = false; this.el.disconnect.hidden = true;
+    if (busyPlayer === this) busyPlayer = null;
+    updateButtons();
+  }
+
+  // Windows can need 20 to 30 seconds after Allow before fast motion can start.
+  waitForSettle(seconds) {
+    this.setState("settling", "pairing, finishing up…");
+    return new Promise((resolve) => {
+      let remaining = seconds;
+      const button = document.createElement("button");
+      button.className = "secondary settle";
+      button.textContent = "Windows says “connection succeeded”: start now";
+      this.el.status.after(button);
+      const finish = () => {
+        clearInterval(timer); button.remove(); this.finishSettle = null;
+        this.setState("connecting", "starting motion…");
+        resolve();
+      };
+      this.finishSettle = finish;
+      button.addEventListener("click", () => { log(this.n, "Start selected."); finish(); });
+      const tick = () => {
+        if (!this.sensor.device.gatt.connected) { finish(); return; }
+        this.status("Paired. Starting fast motion in " + remaining + " seconds, or select the button once Windows says “connection succeeded.”");
+        if (remaining-- <= 0) finish();
+      };
+      const timer = setInterval(tick, 1000);
+      tick();
+    });
+  }
+
+  addSamples(samples) {
+    const now = performance.now();
+    this.queue.push(...samples);
+    this.bundleSize = this.bundleSize * 0.8 + samples.length * 0.2;
+    if (this.lastBundle !== null) {
+      const gap = (now - this.lastBundle) / 1000;
+      this.bundleInterval = this.bundleInterval === null ? gap : this.bundleInterval * 0.8 + gap * 0.2;
+    }
+    this.lastBundle = now;
+    for (let i = 0; i < samples.length; i++) this.arrivals.push(now);
+    while (this.arrivals.length && now - this.arrivals[0] > 2000) this.arrivals.shift();
+  }
+
+  maxPoints() { return CHART_SECONDS * this.rate; }
+
+  playBack(now) {
+    if (this.lastFrame === null) { this.lastFrame = now; return; }
+    const dt = Math.min((now - this.lastFrame) / 1000, 0.25);
+    this.lastFrame = now;
+    let count;
+    if (lowDelay()) {
+      count = this.queue.length; this.carry = 0;
+    } else {
+      const target = Math.max(this.bundleSize * 1.1, 4);
+      const speed = Math.min(1.6, Math.max(0.6, 1 + 0.5 * (this.queue.length - target) / target));
+      this.carry += this.rate * dt * speed;
+      count = Math.floor(this.carry); this.carry -= count;
+      if (this.queue.length > target * 4) count += this.queue.length - Math.round(target);
+    }
+    const alpha = 1 - Math.pow(1 - smoothing(), 52 / this.rate);
+    const limit = this.maxPoints();
+    while (count-- > 0 && this.queue.length) {
+      const s = this.queue.shift();
+      for (let c = 0; c < 3; c++) { this.series[c].push(s[c]); if (this.series[c].length > limit) this.series[c].shift(); }
+      this.smoothed = this.smoothed ? this.smoothed.map((v, c) => v + alpha * (s[c] - v)) : s.slice();
+    }
+    if (this.smoothed) {
+      const k = 1 - Math.exp(-dt / (lowDelay() ? 0.15 : 0.03));
+      this.display = this.display ? this.display.map((v, c) => v + k * (this.smoothed[c] - v)) : this.smoothed.slice();
+    }
+  }
+
+  toggleLevel() {
+    if (this.reference) { this.reference = null; this.el.level.textContent = "Set as level"; }
+    else if (this.display) { this.reference = transpose(rotationBetween(normalise(this.display), [0, 1, 0])); this.el.level.textContent = "Clear level"; }
+  }
+
+  render(now) {
+    this.playBack(now);
+    if (this.series[0].length) {
+      const last = this.series.map((s) => s[s.length - 1]);
+      this.el.vx.textContent = Math.round(last[0]);
+      this.el.vy.textContent = Math.round(last[1]);
+      this.el.vz.textContent = Math.round(last[2]);
+      this.el.readout.textContent = Math.round(this.arrivals.length / 2) + " samples/s" +
+        (this.bundleInterval ? " · ~" + Math.round(this.bundleSize) + " per packet every " + this.bundleInterval.toFixed(2) + " s" : "") +
+        " · page holding " + (this.queue.length / this.rate).toFixed(2) + " s";
+    }
+    this.drawChart();
+    this.orientCube();
+  }
+
+  drawChart() {
+    const canvas = this.el.chart, ratio = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w) return;
+    if (canvas.width !== w * ratio || canvas.height !== h * ratio) { canvas.width = w * ratio; canvas.height = h * ratio; }
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    const css = getComputedStyle(document.documentElement);
+    let peak = 1200;
+    for (const s of this.series) for (const v of s) if (Math.abs(v) > peak) peak = Math.abs(v);
+    peak = Math.ceil(peak / 500) * 500;
+    const y = (v) => h / 2 - (v / peak) * (h / 2 - 10);
+    const total = this.maxPoints();
+    const x = (i, len) => ((total - len + i) / (total - 1)) * w;
+    ctx.strokeStyle = css.getPropertyValue("--line"); ctx.lineWidth = 1;
+    for (const g of [-1000, 0, 1000]) { ctx.beginPath(); ctx.moveTo(0, y(g)); ctx.lineTo(w, y(g)); ctx.stroke(); }
+    ["--x", "--y", "--z"].forEach((colour, c) => {
+      const s = this.series[c];
+      if (s.length < 2) return;
+      const step = Math.max(1, Math.floor(s.length / w));
+      ctx.strokeStyle = css.getPropertyValue(colour); ctx.lineWidth = 2; ctx.lineJoin = "round";
+      ctx.beginPath(); ctx.moveTo(x(0, s.length), y(s[0]));
+      for (let i = step; i < s.length; i += step) ctx.lineTo(x(i, s.length), y(s[i]));
+      ctx.stroke();
+    });
+  }
+
+  orientCube() {
+    if (!this.display) return;
+    const up = normalise(this.display);
+    let R = rotationBetween(up, [0, 1, 0]);
+    if (this.reference) R = multiply(R, this.reference);
+    const M = [[R[0][0], -R[0][1], R[0][2]], [-R[1][0], R[1][1], -R[1][2]], [R[2][0], -R[2][1], R[2][2]]];
+    const m = [M[0][0], M[1][0], M[2][0], 0, M[0][1], M[1][1], M[2][1], 0, M[0][2], M[1][2], M[2][2], 0, 0, 0, 0, 1];
+    this.el.cube.style.transform = "matrix3d(" + m.map((v) => v.toFixed(5)).join(",") + ")";
+    const pitch = Math.atan2(-up[0], Math.hypot(up[1], up[2])) * 180 / Math.PI;
+    const roll = Math.atan2(up[1], up[2]) * 180 / Math.PI;
+    this.el.tilt.textContent = "Pitch " + pitch.toFixed(0) + "° · Roll " + roll.toFixed(0) + "°";
+  }
+}
+
+const players = [new Player(1), new Player(2)];
+
+// Only one player may connect at a time, so the pairing popups never overlap.
+function updateButtons() {
+  for (const p of players) {
+    const blocked = busyPlayer && busyPlayer !== p;
+    p.el.connect.disabled = !!busyPlayer;
+    p.el.id.disabled = busyPlayer === p || !p.el.disconnect.hidden;
+    p.el.connect.title = blocked ? "Wait for Player " + busyPlayer.n + " to finish connecting" : "";
+  }
+}
+
+// The startup helper reads the window title to follow progress, e.g. "P1:ready P2:connecting".
+function updateSetup() {
+  if (typeof players === "undefined") return;
+  document.title = "Two-player test tool | " + players.map((p) => "P" + p.n + ":" + p.state).join(" ");
+  for (const p of players) {
+    const row = document.getElementById("setupP" + p.n);
+    row.dataset.state = p.state;
+    row.lastChild.textContent = "Player " + p.n + ": " + (p.stateLabel || "waiting");
+  }
+  const done = players.every((p) => p.state === "ready");
+  document.getElementById("setup").classList.toggle("done", done);
+  document.getElementById("setupTitle").textContent = done ? "All set! Both sensors are connected." :
+    players.some((p) => p.state === "failed") ? "A sensor needs attention" : "Getting ready…";
+}
+
+// Ctrl + Alt + Shift + F1 / F2 connects Player 1 / 2; F3 ends the pairing wait; F4 disconnects both. The startup helper presses these;
+// a key press counts as a user action, which Chrome requires before opening its picker.
+document.addEventListener("keydown", (e) => {
+  if (!(e.ctrlKey && e.altKey && e.shiftKey)) return;
+  if (e.code === "F4") {                       // closing time: return both sensors to normal mode
+    e.preventDefault();
+    for (const p of players) if (p.sensor) p.sensor.disconnect();
+    return;
+  }
+  if (e.code === "F3") {                       // the launcher saw Windows finish pairing
+    e.preventDefault();
+    if (busyPlayer && busyPlayer.finishSettle) { log(busyPlayer.n, "Windows finished pairing; starting now."); busyPlayer.finishSettle(); }
+    return;
+  }
+  const index = { F1: 0, F2: 1 }[e.code];
+  if (index === undefined) return;
+  e.preventDefault();
+  const p = players[index];
+  if (!busyPlayer && p.el.disconnect.hidden) p.connect();
+});
+
+document.getElementById("rateSelect").addEventListener("change", async () => {
+  for (const p of players) {
+    if (p.sensor && p.sensor.sdkMode) {
+      try { await p.sensor.changeRate(selectedRate()); }
+      catch (err) { log(p.n, "Couldn't change the rate: " + err.message, true); }
+    }
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  for (const p of players) {
+    const s = p.sensor;
+    if (s && s.sdkMode && s.controlPoint && s.device && s.device.gatt.connected) {
+      try { s.controlPoint.writeValue(new Uint8Array([CMD_STOP, ACC])); } catch (err) {}
+    }
+  }
+});
+
+function frame(now) {
+  for (const p of players) p.render(now);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+updateButtons();
+updateSetup();
+</script>
+</body>
+</html>

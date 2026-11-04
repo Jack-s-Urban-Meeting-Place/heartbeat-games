@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+  :root {
+    --bg: #eef2f7; --ink: #1b2433; --muted: #5f6b7c; --line: #d3dae4;
+    --pulse: #c8102e; --move: #1f6fd1; --panel: #ffffff;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141b24; --ink: #e6ebf2; --muted: #93a0b2; --line: #2a3442;
+      --pulse: #ff5a6e; --move: #5aa2ff; --panel: #1b2430;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5; }
+  main { max-width: 44rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+  h2 { font-size: 1rem; font-weight: 600; margin: 2.5rem 0 .5rem; }
+  button { font: inherit; font-weight: 600; padding: .6rem 1.1rem; border-radius: 999px;
+           border: 2px solid var(--pulse); background: var(--pulse); color: #fff; cursor: pointer; }
+  button.secondary { background: transparent; color: var(--pulse); }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  #status { color: var(--muted); margin: 1.5rem 0 0; min-height: 1.5em; }
+  .readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; margin-top: 2rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.25rem; }
+  .label { color: var(--muted); font-size: .9rem; }
+  .big { font-size: 3.5rem; font-weight: 800; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .small-unit { font-size: 1rem; font-weight: 400; color: var(--muted); letter-spacing: 0; }
+  #state { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: 12px; font-size: 1.4rem; font-weight: 700;
+           border: 2px solid var(--line); background: var(--panel); transition: background .2s, color .2s, border-color .2s; }
+  #state.moving { border-color: var(--move); color: var(--move); }
+  #state.still { border-color: var(--muted); color: var(--muted); }
+  #state.off { border-color: var(--pulse); background: var(--pulse); color: #fff; }
+  #stateDetail { display: block; font-size: .95rem; font-weight: 400; opacity: .85; }
+  canvas { width: 100%; height: 170px; display: block; background: var(--panel); border-radius: 12px; border: 1px solid var(--line); margin-top: 1rem; }
+  .controls { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; color: var(--muted); }
+  input[type=range] { accent-color: var(--move); width: 14rem; max-width: 100%; }
+  .axes { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .95rem; margin-top: .5rem; }
+  #log { margin: 0; padding: .75rem 1rem .75rem 2.25rem; background: var(--panel); border: 1px solid var(--line);
+         border-radius: 12px; font-size: .9rem; color: var(--muted); max-height: 18rem; overflow-y: auto; }
+  #log li.error { color: var(--pulse); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Motion test</h1>
+    <div>
+      <button id="connect">Connect sensor</button>
+      <button id="disconnect" class="secondary" hidden>Disconnect</button>
+    </div>
+  </header>
+  <p id="status">Turn on your Verity Sense (blue side light), then select Connect sensor. If Windows asks to pair, select Allow and wait for “connection succeeded.”</p>
+
+  <div class="readouts">
+    <div class="card"><div class="label">Movement</div><div class="big" id="motion">--<span class="small-unit"> mG</span></div></div>
+    <div class="card"><div class="label">Drift over 5 seconds</div><div class="big" id="drift">--<span class="small-unit"> mG</span></div></div>
+    <div class="card"><div class="label">Heart rate</div><div class="big" id="bpm">--<span class="small-unit"> bpm</span></div></div>
+  </div>
+
+  <div id="state" class="still">Waiting for motion data<span id="stateDetail">Nothing streaming yet.</span></div>
+
+  <canvas id="chart" aria-label="Movement level over the last 30 seconds"></canvas>
+  <div class="controls">
+    <label for="threshold">Stillness threshold: <strong id="thresholdValue">20 mG</strong></label>
+    <input type="range" id="threshold" min="2" max="150" step="1" value="20">
+  </div>
+  <div class="controls">
+    <label for="driftThreshold">Drift threshold: <strong id="driftThresholdValue">8 mG</strong></label>
+    <input type="range" id="driftThreshold" min="1" max="60" step="1" value="8">
+  </div>
+  <div class="axes" id="axes">X — · Y — · Z —</div>
+
+  <h2>Connection log</h2>
+  <ol id="log"><li>Nothing yet. Select Connect sensor to start.</li></ol>
+</main>
+
+<script>
+// ---- Polar Measurement Data (PMD) service, from Polar's SDK documentation ----
+const PMD_SERVICE = "fb005c80-02e7-f387-1cad-8acd2d8df0c8";
+const PMD_CONTROL = "fb005c81-02e7-f387-1cad-8acd2d8df0c8";
+const PMD_DATA    = "fb005c82-02e7-f387-1cad-8acd2d8df0c8";
+const ACC = 2;                                   // measurement type: accelerometer
+const CMD_GET_SETTINGS = 1, CMD_START = 2, CMD_STOP = 3;
+// Byte size of each setting value, by setting type (sample rate, resolution, range, ...)
+const SETTING_SIZES = { 0: 2, 1: 2, 2: 2, 3: 4, 4: 1, 5: 4, 6: 16, 7: 1, 8: 1, 9: 2, 10: 4, 11: 4, 12: 1 };
+const SETTING_NAMES = { 0: "sample rate", 1: "resolution", 2: "range", 4: "channels", 5: "factor" };
+const STATUS_NAMES = ["success", "invalid op code", "invalid measurement type", "not supported", "invalid length",
+  "invalid parameter", "already running", "invalid resolution", "invalid sample rate", "invalid range",
+  "invalid MTU", "invalid number of channels", "invalid state", "device in charger"];
+
+let device = null, controlPoint = null;
+let connecting = false, accFactor = 1, firstFrameLogged = false;
+const MAX_ATTEMPTS = 3;
+
+// ---- Logging ---------------------------------------------------------------
+function log(message, isError = false) {
+  const list = document.getElementById("log");
+  if (list.dataset.started !== "yes") { list.innerHTML = ""; list.dataset.started = "yes"; }
+  const item = document.createElement("li");
+  item.textContent = (performance.now() / 1000).toFixed(1) + "s  " + message;
+  if (isError) item.className = "error";
+  list.appendChild(item);
+  list.scrollTop = list.scrollHeight;
+  console.log("[motion]", message);
+}
+const setStatus = (text) => { document.getElementById("status").textContent = text; };
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const bytesOf = (dataView) => new Uint8Array(dataView.buffer.slice(dataView.byteOffset, dataView.byteOffset + dataView.byteLength));
+const hex = (bytes) => Array.from(bytes, (b) => b.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+
+// ---- Connecting ------------------------------------------------------------
+async function connect() {
+  if (!navigator.bluetooth) {
+    setStatus("This browser can't use Bluetooth. Open the page in Chrome or Edge.");
+    return;
+  }
+  try {
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: ["heart_rate"] }, { namePrefix: "Polar" }],
+      optionalServices: ["heart_rate", PMD_SERVICE]
+    });
+  } catch (err) {
+    setStatus(err.name === "NotFoundError" ? "No sensor selected." : "Couldn't open the device list: " + err.message);
+    log("Device picker: " + err.name + ": " + err.message, true);
+    return;
+  }
+  log("Selected " + device.name + ".");
+  device.removeEventListener("gattserverdisconnected", onDisconnected);
+  device.addEventListener("gattserverdisconnected", onDisconnected);
+
+  connecting = true;
+  let lastError = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      setStatus("Connecting (attempt " + attempt + " of " + MAX_ATTEMPTS + "). If Windows asks to pair, select Allow and wait for “connection succeeded.”");
+      await setUp();
+      connecting = false;
+      document.getElementById("connect").hidden = true;
+      document.getElementById("disconnect").hidden = false;
+      setStatus("Connected to " + device.name + ". Move the sensor around, then set it down on the table.");
+      return;
+    } catch (err) {
+      lastError = err;
+      log("Attempt " + attempt + " failed: " + err.name + ": " + err.message, true);
+      if (device.gatt.connected) device.gatt.disconnect();
+      if (err.afterHeartRate) {
+        // Starting over would restart Windows pairing, so stop and explain instead.
+        connecting = false;
+        setStatus("Heart rate worked, but Polar's motion data stayed locked (" + err.message +
+                  "). Select Connect sensor, select Allow, and wait for “connection succeeded” before pressing the start button.");
+        document.getElementById("connect").hidden = false;
+        document.getElementById("disconnect").hidden = true;
+        return;
+      }
+      await wait(1000 * attempt);
+    }
+  }
+  connecting = false;
+  setStatus("Connection failed after " + MAX_ATTEMPTS + " attempts: " + lastError.message);
+}
+
+async function setUp() {
+  firstFrameLogged = false;
+  log("Connecting to the sensor…");
+  const server = await device.gatt.connect();
+
+  log("Connected. Starting heart rate…");
+  const hrService = await server.getPrimaryService("heart_rate");
+  const hrChar = await hrService.getCharacteristic("heart_rate_measurement");
+  hrChar.oncharacteristicvaluechanged = (e) => onHeartRate(e.target.value);
+  const firstReading = waitForHeartRate(60000);
+  await hrChar.startNotifications();
+  log("Heart rate started. Waiting for the first reading…");
+  setStatus("If Windows shows a pairing popup, select Allow.");
+  await firstReading;
+  log("Heart rate is flowing. Giving Windows time to finish pairing before starting motion…");
+  await waitForPairingToSettle(30);
+
+  try {
+    await startMotion(server);
+  } catch (err) {
+    err.afterHeartRate = true;     // tells connect() not to start over and restart pairing
+    throw err;
+  }
+}
+
+async function startMotion(server) {
+  if (!device.gatt.connected) throw new Error("The sensor disconnected while waiting for pairing.");
+  log("Opening Polar's measurement service…");
+  const pmd = await server.getPrimaryService(PMD_SERVICE);
+  controlPoint = await pmd.getCharacteristic(PMD_CONTROL);
+  const dataChar = await pmd.getCharacteristic(PMD_DATA);
+  controlPoint.oncharacteristicvaluechanged = onControlPoint;
+  await controlPoint.startNotifications();
+  dataChar.oncharacteristicvaluechanged = (e) => onPmdData(e.target.value);
+  await dataChar.startNotifications();
+  log("Measurement service ready.");
+
+  try {
+    const features = bytesOf(await controlPoint.readValue());
+    if (features[0] === 0x0F) {
+      const names = { 0: "ECG", 1: "PPG", 2: "accelerometer", 3: "PPI", 5: "gyroscope", 6: "magnetometer" };
+      const offered = Object.keys(names).filter((bit) => (features[1] >> bit) & 1).map((bit) => names[bit]);
+      log("Sensor offers: " + offered.join(", ") + ".");
+    }
+  } catch (err) {
+    log("Couldn't read the feature list (not essential): " + err.message);
+  }
+
+  log("Asking for accelerometer settings…");
+  const settingsResponse = await sendCommand([CMD_GET_SETTINGS, ACC]);
+  const available = parseSettings(settingsResponse.params);
+  log("Available: " + describeSettings(available) + ".");
+
+  const { bytes, summary } = chooseSettings(available);
+  log("Starting accelerometer with " + summary + "…");
+  let startResponse;
+  try {
+    startResponse = await sendCommand([CMD_START, ACC, ...bytes]);
+  } catch (err) {
+    if (err.status !== 6) throw err;           // 6 = already running from an earlier session
+    log("It was already running. Restarting it…");
+    await sendCommand([CMD_STOP, ACC]);
+    startResponse = await sendCommand([CMD_START, ACC, ...bytes]);
+  }
+  const started = parseSettings(startResponse.params);
+  accFactor = started[5] ? new DataView(started[5][0].buffer).getFloat32(0, true) : 1;
+  log("Accelerometer started (conversion factor " + accFactor + "). Motion data should arrive within a second or two.");
+}
+
+// Windows can need 20 to 30 seconds after "Allow" before Polar's measurement
+// service unlocks. Wait, with a button to skip ahead once the popup says
+// "connection succeeded".
+function waitForPairingToSettle(seconds) {
+  return new Promise((resolve) => {
+    let remaining = seconds;
+    const button = document.createElement("button");
+    button.className = "secondary";
+    button.style.marginTop = ".75rem";
+    button.textContent = "Windows says “connection succeeded”: start motion now";
+    document.getElementById("status").after(button);
+    const finish = () => { clearInterval(timer); button.remove(); resolve(); };
+    button.addEventListener("click", () => { log("Start motion selected."); finish(); });
+    const tick = () => {
+      if (!device.gatt.connected) { finish(); return; }
+      setStatus("Heart rate is flowing. When the Windows popup says “connection succeeded,” select the button below. " +
+                "Otherwise motion starts automatically in " + remaining + " seconds.");
+      if (remaining-- <= 0) finish();
+    };
+    const timer = setInterval(tick, 1000);
+    tick();
+  });
+}
+
+function disconnect() {
+  log("Disconnect selected.");
+  if (device && device.gatt.connected) device.gatt.disconnect();
+}
+
+function onDisconnected() {
+  log("The sensor's connection closed.", !connecting);
+  if (connecting) return;
+  document.getElementById("connect").hidden = false;
+  document.getElementById("disconnect").hidden = true;
+  setStatus("Sensor disconnected. Select Connect sensor to reconnect.");
+}
+
+// ---- Control point: commands and responses ---------------------------------
+let pendingResponse = null;
+
+function onControlPoint(event) {
+  const d = bytesOf(event.target.value);
+  if (d[0] !== 0xF0) return;                     // 0xF0 marks a response to our command
+  const response = { opCode: d[1], type: d[2], status: d[3], params: d.length > 5 ? d.slice(5) : new Uint8Array() };
+  if (pendingResponse) { const resolve = pendingResponse; pendingResponse = null; resolve(response); }
+}
+
+async function sendCommand(bytes) {
+  const answer = new Promise((resolve, reject) => {
+    pendingResponse = resolve;
+    setTimeout(() => {
+      if (pendingResponse === resolve) { pendingResponse = null; reject(new Error("The sensor didn't answer in time.")); }
+    }, 6000);
+  });
+  const data = new Uint8Array(bytes);
+  if (controlPoint.writeValueWithResponse) await controlPoint.writeValueWithResponse(data);
+  else await controlPoint.writeValue(data);
+  const response = await answer;
+  if (response.status !== 0) {
+    const err = new Error("The sensor refused the request (" + (STATUS_NAMES[response.status] || "error " + response.status) + ").");
+    err.status = response.status;
+    throw err;
+  }
+  return response;
+}
+
+// ---- Settings ----------------------------------------------------------------
+// Settings arrive as [type, count, value, value, ...] repeated; values are little-endian.
+function parseSettings(bytes) {
+  const out = {};
+  let offset = 0;
+  while (offset + 1 < bytes.length) {
+    const type = bytes[offset++], count = bytes[offset++], size = SETTING_SIZES[type];
+    if (size === undefined) break;
+    out[type] = [];
+    for (let i = 0; i < count; i++) { out[type].push(bytes.slice(offset, offset + size)); offset += size; }
+  }
+  return out;
+}
+const unsignedLE = (b) => b.reduce((value, byte, i) => value + byte * 2 ** (8 * i), 0);
+
+function describeSettings(settings) {
+  return Object.keys(settings).filter((t) => t !== "5")
+    .map((t) => (SETTING_NAMES[t] || "type " + t) + " " + settings[t].map(unsignedLE).join("/"))
+    .join(", ");
+}
+
+function chooseSettings(available) {
+  const pick = (type, preferred, fallback) => {
+    const values = (available[type] || []).map(unsignedLE);
+    if (!values.length) return null;
+    return values.includes(preferred) ? preferred : fallback(values);
+  };
+  const chosen = [
+    [0, pick(0, 52, (v) => Math.min(...v))],     // sample rate (Hz)
+    [1, pick(1, 16, (v) => Math.max(...v))],     // resolution (bits)
+    [2, pick(2, 8, (v) => Math.max(...v))],      // range (G)
+    [4, pick(4, 3, (v) => Math.max(...v))]       // channels
+  ].filter(([, value]) => value !== null);
+  const bytes = [];
+  for (const [type, value] of chosen) {
+    bytes.push(type, 1);
+    for (let i = 0; i < SETTING_SIZES[type]; i++) bytes.push((value >> (8 * i)) & 0xFF);
+  }
+  return { bytes, summary: chosen.map(([t, v]) => SETTING_NAMES[t] + " " + v).join(", ") };
+}
+
+// ---- Decoding motion data --------------------------------------------------
+// Frame: [measurement type][8-byte timestamp][frame type][content...]
+// Frame type bit 7 set = delta-compressed content.
+function onPmdData(dataView) {
+  const b = bytesOf(dataView);
+  if (b.length < 10 || (b[0] & 0x3F) !== ACC) return;
+  const frameType = b[9] & 0x7F, compressed = (b[9] & 0x80) !== 0, content = b.subarray(10);
+  let samples;
+  try {
+    if (compressed) {
+      const raw = parseDeltaFrames(content, 3, 16);
+      // Compressed type 0 arrives in G units (scaled by the factor); type 1 in milli-G.
+      const scale = frameType === 0 ? accFactor * 1000 : accFactor;
+      samples = raw.map((s) => s.map((v) => v * scale));
+    } else {
+      const size = frameType === 0 ? 1 : frameType === 1 ? 2 : 3;
+      samples = [];
+      for (let o = 0; o + 3 * size <= content.length; o += 3 * size) {
+        samples.push([readSignedLE(content, o, size), readSignedLE(content, o + size, size), readSignedLE(content, o + 2 * size, size)]);
+      }
+    }
+  } catch (err) {
+    log("Couldn't decode a motion frame: " + err.message + " (" + hex(b.subarray(0, 16)) + "…)", true);
+    return;
+  }
+  if (!firstFrameLogged) {
+    firstFrameLogged = true;
+    log("First motion data: frame type " + frameType + (compressed ? " (compressed)" : "") + ", " + samples.length +
+        " samples, first sample X " + Math.round(samples[0][0]) + " Y " + Math.round(samples[0][1]) + " Z " + Math.round(samples[0][2]) + " mG.");
+  }
+  addSamples(samples);
+}
+
+function readSignedLE(bytes, offset, size) {
+  let value = 0;
+  for (let i = 0; i < size; i++) value |= bytes[offset + i] << (8 * i);
+  const bits = size * 8;
+  if (bits < 32 && (value & (1 << (bits - 1)))) value -= 2 ** bits;
+  return value;
+}
+
+// Delta compression: a full reference sample, then blocks of
+// [delta bit width][sample count][packed deltas, least significant bit first].
+function parseDeltaFrames(bytes, channels, resolution) {
+  const refSize = Math.ceil(resolution / 8);
+  let offset = 0, last = [];
+  for (let c = 0; c < channels; c++) { last.push(readSignedLE(bytes, offset, refSize)); offset += refSize; }
+  const samples = [last];
+  while (offset + 1 < bytes.length) {
+    const width = bytes[offset++], count = bytes[offset++];
+    let bit = 0;
+    for (let s = 0; s < count; s++) {
+      const next = [];
+      for (let c = 0; c < channels; c++) {
+        let delta = 0;
+        for (let i = 0; i < width; i++, bit++) delta |= ((bytes[offset + (bit >> 3)] >> (bit & 7)) & 1) << i;
+        if (width > 0 && (delta & (1 << (width - 1)))) delta -= 2 ** width;
+        next.push(last[c] + delta);
+      }
+      samples.push(next);
+      last = next;
+    }
+    offset += Math.ceil((width * count * channels) / 8);
+  }
+  return samples;
+}
+
+// ---- Heart rate ------------------------------------------------------------
+let heartRateWaiter = null;
+
+function waitForHeartRate(ms) {
+  return new Promise((resolve, reject) => {
+    heartRateWaiter = resolve;
+    setTimeout(() => {
+      if (heartRateWaiter === resolve) {
+        heartRateWaiter = null;
+        reject(new Error("No heart rate reading arrived. If Windows showed a pairing popup, it may not have been accepted."));
+      }
+    }, ms);
+  });
+}
+
+function onHeartRate(dataView) {
+  if (heartRateWaiter) { const resolve = heartRateWaiter; heartRateWaiter = null; resolve(); }
+  const flags = dataView.getUint8(0);
+  const bpm = (flags & 1) ? dataView.getUint16(1, true) : dataView.getUint8(1);
+  document.getElementById("bpm").firstChild.nodeValue = bpm;
+}
+
+// ---- Movement level and still detection ------------------------------------
+// Movement = combined standard deviation of X, Y and Z over the last second, in milli-G.
+// It catches both shaking and turning, and sits near zero when the sensor rests on a table.
+const WINDOW = 52;                  // about one second of samples
+const axes = [[], [], []];
+const history = [];                 // movement level, five values per second
+const HISTORY_POINTS = 150;         // 30 seconds
+const DRIFT_POINTS = 25;           // 5 seconds of averaged directions
+const meanHistory = [];
+let stillSince = null, latest = null;
+
+function addSamples(samples) {
+  for (const s of samples) {
+    for (let c = 0; c < 3; c++) { axes[c].push(s[c]); if (axes[c].length > WINDOW) axes[c].shift(); }
+    latest = s;
+  }
+}
+
+function movementLevel() {
+  if (axes[0].length < 10) return null;
+  let total = 0;
+  for (const values of axes) {
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    total += values.reduce((a, v) => a + (v - mean) ** 2, 0) / values.length;
+  }
+  return Math.sqrt(total);
+}
+
+function threshold() { return Number(document.getElementById("threshold").value); }
+function driftThreshold() { return Number(document.getElementById("driftThreshold").value); }
+
+function update() {
+  const level = movementLevel();
+  if (level === null) return;
+  history.push(level);
+  if (history.length > HISTORY_POINTS) history.shift();
+
+  document.getElementById("motion").firstChild.nodeValue = Math.round(level);
+  if (latest) {
+    document.getElementById("axes").textContent =
+      "X " + Math.round(latest[0]) + " · Y " + Math.round(latest[1]) + " · Z " + Math.round(latest[2]) + " mG";
+  }
+
+  // Drift: how far the average direction of gravity wanders over 5 seconds.
+  // A sensor on a table barely drifts; a person holding still sways and breathes.
+  const meanVector = axes.map((values) => values.reduce((a, b) => a + b, 0) / values.length);
+  meanHistory.push(meanVector);
+  if (meanHistory.length > DRIFT_POINTS) meanHistory.shift();
+  let drift = null;
+  if (meanHistory.length === DRIFT_POINTS) {
+    const centre = [0, 1, 2].map((c) => meanHistory.reduce((a, v) => a + v[c], 0) / DRIFT_POINTS);
+    drift = Math.max(...meanHistory.map((v) => Math.hypot(v[0] - centre[0], v[1] - centre[1], v[2] - centre[2])));
+    document.getElementById("drift").firstChild.nodeValue = drift.toFixed(1);
+  }
+
+  const state = document.getElementById("state");
+  const detail = document.getElementById("stateDetail");
+  const now = performance.now();
+  if (level > threshold()) {
+    stillSince = null;
+    state.className = "moving";
+    state.firstChild.nodeValue = "Moving";
+    detail.textContent = "Movement is above the stillness threshold.";
+  } else {
+    if (stillSince === null) stillSince = now;
+    const seconds = (now - stillSince) / 1000;
+    if (drift !== null && seconds >= 5 && drift < driftThreshold()) {
+      state.className = "off";
+      state.firstChild.nodeValue = "Locked in place: sensor may be off";
+      detail.textContent = "Still for " + seconds.toFixed(0) + " seconds with almost no drift.";
+    } else {
+      state.className = "still";
+      state.firstChild.nodeValue = "Holding still";
+      detail.textContent = "Still for " + seconds.toFixed(1) + " seconds" +
+        (drift !== null ? ", drifting " + drift.toFixed(1) + " mG." : ".");
+    }
+  }
+  drawChart();
+}
+
+function drawChart() {
+  const canvas = document.getElementById("chart");
+  const ratio = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * ratio; canvas.height = h * ratio;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(ratio, ratio);
+  ctx.clearRect(0, 0, w, h);
+  const css = getComputedStyle(document.documentElement);
+  const top = Math.max(threshold() * 4, ...history, 10);
+  const y = (v) => h - 12 - (Math.min(v, top) / top) * (h - 28);
+  const x = (i) => ((HISTORY_POINTS - history.length + i) / (HISTORY_POINTS - 1)) * w;
+
+  ctx.strokeStyle = css.getPropertyValue("--muted");
+  ctx.setLineDash([5, 5]); ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, y(threshold())); ctx.lineTo(w, y(threshold())); ctx.stroke();
+  ctx.setLineDash([]);
+
+  if (history.length > 1) {
+    ctx.strokeStyle = css.getPropertyValue("--move");
+    ctx.lineWidth = 2.5; ctx.lineJoin = "round";
+    ctx.beginPath();
+    history.forEach((v, i) => i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v)));
+    ctx.stroke();
+  }
+  ctx.fillStyle = css.getPropertyValue("--muted");
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText(Math.round(top) + " mG", 8, 16);
+  ctx.fillText("threshold", 8, y(threshold()) - 4);
+}
+
+document.getElementById("threshold").addEventListener("input", (e) => {
+  document.getElementById("thresholdValue").textContent = e.target.value + " mG";
+  drawChart();
+});
+document.getElementById("driftThreshold").addEventListener("input", (e) => {
+  document.getElementById("driftThresholdValue").textContent = e.target.value + " mG";
+});
+document.getElementById("connect").addEventListener("click", connect);
+document.getElementById("disconnect").addEventListener("click", disconnect);
+window.addEventListener("resize", drawChart);
+setInterval(update, 200);
+drawChart();
+</script>
+</body>
+</html>

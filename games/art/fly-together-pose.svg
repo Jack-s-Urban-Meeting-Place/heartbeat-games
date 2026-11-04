@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="Segoe UI, system-ui, sans-serif">
+  <!--
+    Fly Together's START screen picture: two players standing with their arms
+    out like wings, a sensor on top of one wrist, gently tilting together.
+    Redrawn from storyboards/fly-together/Player_wearable.jpg.
+    Colours: orange = Player 1, purple = Player 2 (the players' colours on screen),
+    green = movement (as on the storyboards), dark = the sensor.
+  -->
+  <defs>
+    <marker id="tip" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4.2" markerHeight="4.2" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2fae62"/>
+    </marker>
+
+    <!-- One player. Arms pivot around the chest so they seesaw like wings. -->
+    <g id="arms">
+      <line x1="-150" y1="0" x2="150" y2="0" stroke-width="24" stroke-linecap="round"/>
+      <!-- The sensor: a band round the wrist with the sensor pod on top, like a watch. -->
+      <rect x="104" y="-15" width="32" height="30" rx="7" fill="#2b2630"/>
+      <rect x="107" y="-26" width="26" height="15" rx="6" fill="#4a4452" stroke="#fff" stroke-width="2.5"/>
+      <circle cx="120" cy="-18.5" r="2.6" fill="#5ec8ff"/>
+      <circle cx="120" cy="-4" r="31" fill="none" stroke="#f2a541" stroke-width="4">
+        <animate attributeName="opacity" values="1;0.25;1" dur="1.6s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+    <g id="arrows" fill="none" stroke="#2fae62" stroke-width="7" stroke-linecap="round">
+      <path d="M-178,72 Q-222,128 -178,184" marker-start="url(#tip)" marker-end="url(#tip)"/>
+      <path d="M178,72 Q222,128 178,184" marker-start="url(#tip)" marker-end="url(#tip)"/>
+    </g>
+  </defs>
+
+  <!-- Player 1 -->
+  <g transform="translate(240 0)" fill="#e0662b" stroke="#e0662b">
+    <ellipse cx="0" cy="392" rx="70" ry="10" fill="#000" stroke="none" opacity="0.08"/>
+    <use href="#arrows"/>
+    <line x1="-14" y1="230" x2="-26" y2="372" stroke-width="28" stroke-linecap="round"/>
+    <line x1="14" y1="230" x2="26" y2="372" stroke-width="28" stroke-linecap="round"/>
+    <rect x="-31" y="100" width="62" height="142" rx="28" stroke="none"/>
+    <circle cx="0" cy="62" r="31" stroke="none"/>
+    <g transform="translate(0 128)">
+      <g><use href="#arms"/>
+        <animateTransform attributeName="transform" type="rotate" values="0;-13;0;13;0" dur="4s" repeatCount="indefinite"
+          calcMode="spline" keyTimes="0;0.25;0.5;0.75;1" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1"/>
+      </g>
+    </g>
+    <text x="0" y="432" text-anchor="middle" font-size="34" font-weight="800" stroke="none">Player 1</text>
+  </g>
+
+  <!-- Player 2 -->
+  <g transform="translate(720 0)" fill="#7a4fd6" stroke="#7a4fd6">
+    <ellipse cx="0" cy="392" rx="70" ry="10" fill="#000" stroke="none" opacity="0.08"/>
+    <use href="#arrows"/>
+    <line x1="-14" y1="230" x2="-26" y2="372" stroke-width="28" stroke-linecap="round"/>
+    <line x1="14" y1="230" x2="26" y2="372" stroke-width="28" stroke-linecap="round"/>
+    <rect x="-31" y="100" width="62" height="142" rx="28" stroke="none"/>
+    <circle cx="0" cy="62" r="31" stroke="none"/>
+    <g transform="translate(0 128)">
+      <g><use href="#arms"/>
+        <animateTransform attributeName="transform" type="rotate" values="0;-13;0;13;0" dur="4s" repeatCount="indefinite"
+          calcMode="spline" keyTimes="0;0.25;0.5;0.75;1" keySplines=".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1"/>
+      </g>
+    </g>
+    <text x="0" y="432" text-anchor="middle" font-size="34" font-weight="800" stroke="none">Player 2</text>
+  </g>
+</svg>

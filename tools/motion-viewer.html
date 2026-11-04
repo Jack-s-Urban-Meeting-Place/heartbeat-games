@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Motion viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+  :root {
+    --bg: #eef2f7; --ink: #1b2433; --muted: #5f6b7c; --line: #d3dae4; --panel: #ffffff;
+    --pulse: #c8102e; --x: #d64545; --y: #2a9a5a; --z: #1f6fd1;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141b24; --ink: #e6ebf2; --muted: #93a0b2; --line: #2a3442; --panel: #1b2430;
+      --pulse: #ff5a6e; --x: #ff6b6b; --y: #4fd18b; --z: #5aa2ff;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.5; }
+  main { max-width: 64rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+  h2 { font-size: 1rem; font-weight: 600; margin: 2rem 0 .5rem; }
+  .header-right { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .hr { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .hr strong { color: var(--pulse); font-size: 1.2rem; }
+  button { font: inherit; font-weight: 600; padding: .6rem 1.1rem; border-radius: 999px;
+           border: 2px solid var(--pulse); background: var(--pulse); color: #fff; cursor: pointer; }
+  button.secondary { background: transparent; color: var(--pulse); }
+  button.quiet { border-color: var(--line); background: transparent; color: var(--ink); font-weight: 400; padding: .35rem .9rem; }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  #status { color: var(--muted); margin: 1rem 0 0; min-height: 1.5em; }
+
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1.25rem; margin-top: 1.5rem; }
+  @media (max-width: 52rem) { .layout { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.25rem; }
+
+  .values { display: grid; grid-template-columns: repeat(3, 1fr); gap: .75rem; margin-bottom: 1rem; }
+  .axis-label { font-size: .9rem; font-weight: 600; }
+  .axis-value { font-size: 2.2rem; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .axis-unit { font-size: .85rem; color: var(--muted); }
+  .x { color: var(--x); } .y { color: var(--y); } .z { color: var(--z); }
+  canvas { width: 100%; height: 280px; display: block; }
+  .chart-foot { display: flex; justify-content: space-between; gap: 1rem; color: var(--muted); font-size: .85rem; margin-top: .5rem; flex-wrap: wrap; }
+
+  .stage { height: 18rem; perspective: 900px; display: grid; place-items: center; }
+  .view { transform-style: preserve-3d; transform: rotateX(-22deg) rotateY(-32deg); }
+  .cube { --s: 4.5rem; width: calc(var(--s) * 2); height: calc(var(--s) * 2); position: relative; transform-style: preserve-3d; }
+  .face { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 1.3rem;
+          border: 2px solid rgba(0,0,0,.25); border-radius: 10px; color: #fff; backface-visibility: visible;
+          text-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .face.px { background: var(--x); transform: rotateY(90deg) translateZ(var(--s)); }
+  .face.nx { background: color-mix(in srgb, var(--x) 55%, #333); transform: rotateY(-90deg) translateZ(var(--s)); }
+  .face.py { background: var(--y); transform: rotateX(90deg) translateZ(var(--s)); }
+  .face.ny { background: color-mix(in srgb, var(--y) 55%, #333); transform: rotateX(-90deg) translateZ(var(--s)); }
+  .face.pz { background: var(--z); transform: translateZ(var(--s)); }
+  .face.nz { background: color-mix(in srgb, var(--z) 55%, #333); transform: rotateY(180deg) translateZ(var(--s)); }
+  .cube-note { color: var(--muted); font-size: .85rem; margin: .5rem 0 0; }
+  .tilt { font-variant-numeric: tabular-nums; margin-top: .5rem; }
+  .mode { border: 1px solid var(--line); border-radius: 10px; margin: .75rem 0 0; padding: .5rem .75rem; display: flex; gap: 1rem; flex-wrap: wrap; font-size: .9rem; }
+  .mode legend { color: var(--muted); padding: 0 .25rem; font-size: .8rem; }
+  .mode span { color: var(--muted); }
+  .mode input { accent-color: var(--z); }
+  .smooth-control { display: grid; gap: .25rem; margin: .75rem 0 .75rem; font-size: .9rem; }
+  .smooth-control span { color: var(--muted); font-size: .8rem; }
+  .smooth-control input { accent-color: var(--z); width: 100%; }
+
+  #log { margin: 0; padding: .75rem 1rem .75rem 2.25rem; background: var(--panel); border: 1px solid var(--line);
+         border-radius: 12px; font-size: .85rem; color: var(--muted); max-height: 12rem; overflow-y: auto; }
+  #log li.error { color: var(--pulse); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Motion viewer</h1>
+    <div class="header-right">
+      <span class="hr">Heart rate <strong id="bpm">--<span> bpm</span></strong></span>
+      <button id="connect">Connect sensor</button>
+      <button id="disconnect" class="secondary" hidden>Disconnect</button>
+    </div>
+  </header>
+  <p id="status">Turn on your Verity Sense (blue side light), then select Connect sensor. If Windows asks to pair, select Allow and wait for “connection succeeded.”</p>
+
+  <div class="layout">
+    <section class="panel" aria-label="Live accelerometer data">
+      <div class="values">
+        <div><div class="axis-label x">X</div><div class="axis-value x" id="vx">—</div><div class="axis-unit">mG</div></div>
+        <div><div class="axis-label y">Y</div><div class="axis-value y" id="vy">—</div><div class="axis-unit">mG</div></div>
+        <div><div class="axis-label z">Z</div><div class="axis-value z" id="vz">—</div><div class="axis-unit">mG</div></div>
+      </div>
+      <canvas id="chart" aria-label="X, Y and Z acceleration over the last 10 seconds"></canvas>
+      <div class="chart-foot">
+        <span>Last 10 seconds · 1000 mG = 1 G, the pull of gravity</span>
+        <span id="rate">— samples per second</span>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Sensor orientation">
+      <div class="stage">
+        <div class="view">
+          <div class="cube" id="cube">
+            <div class="face px">+X</div><div class="face nx">−X</div>
+            <div class="face py">+Y</div><div class="face ny">−Y</div>
+            <div class="face pz">+Z</div><div class="face nz">−Z</div>
+          </div>
+        </div>
+      </div>
+      <div class="tilt" id="tilt">Tilt: waiting for data</div>
+      <p class="cube-note">The face pointing up is the sensor axis pointing away from the floor. Tilting works; spinning flat on a table doesn’t show, because gravity can’t see that turn.</p>
+      <fieldset class="mode">
+        <legend>Playback</legend>
+        <label><input type="radio" name="mode" id="modeLow" checked> Low delay <span>(steppier)</span></label>
+        <label><input type="radio" name="mode" id="modeSmooth"> Smooth <span>(more delay)</span></label>
+      </fieldset>
+      <div class="smooth-control">
+        <label for="smoothing">Cube smoothing</label>
+        <input type="range" id="smoothing" min="0.02" max="0.5" step="0.01" value="0.12" aria-describedby="smoothHint">
+        <span id="smoothHint">Left: smoother · Right: snappier</span>
+      </div>
+      <button class="quiet" id="zero">Set current position as level</button>
+    </section>
+  </div>
+
+  <h2>Connection log</h2>
+  <ol id="log"><li>Nothing yet. Select Connect sensor to start.</li></ol>
+</main>
+
+<script>
+// ---- Polar Measurement Data (PMD) service, from Polar's SDK documentation ----
+const PMD_SERVICE = "fb005c80-02e7-f387-1cad-8acd2d8df0c8";
+const PMD_CONTROL = "fb005c81-02e7-f387-1cad-8acd2d8df0c8";
+const PMD_DATA    = "fb005c82-02e7-f387-1cad-8acd2d8df0c8";
+const ACC = 2;                                   // measurement type: accelerometer
+const CMD_GET_SETTINGS = 1, CMD_START = 2, CMD_STOP = 3;
+// Byte size of each setting value, by setting type (sample rate, resolution, range, ...)
+const SETTING_SIZES = { 0: 2, 1: 2, 2: 2, 3: 4, 4: 1, 5: 4, 6: 16, 7: 1, 8: 1, 9: 2, 10: 4, 11: 4, 12: 1 };
+const SETTING_NAMES = { 0: "sample rate", 1: "resolution", 2: "range", 4: "channels", 5: "factor" };
+const STATUS_NAMES = ["success", "invalid op code", "invalid measurement type", "not supported", "invalid length",
+  "invalid parameter", "already running", "invalid resolution", "invalid sample rate", "invalid range",
+  "invalid MTU", "invalid number of channels", "invalid state", "device in charger"];
+
+let device = null, controlPoint = null;
+let connecting = false, accFactor = 1, firstFrameLogged = false;
+const MAX_ATTEMPTS = 3;
+
+// ---- Logging ---------------------------------------------------------------
+function log(message, isError = false) {
+  const list = document.getElementById("log");
+  if (list.dataset.started !== "yes") { list.innerHTML = ""; list.dataset.started = "yes"; }
+  const item = document.createElement("li");
+  item.textContent = (performance.now() / 1000).toFixed(1) + "s  " + message;
+  if (isError) item.className = "error";
+  list.appendChild(item);
+  list.scrollTop = list.scrollHeight;
+  console.log("[motion]", message);
+}
+const setStatus = (text) => { document.getElementById("status").textContent = text; };
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const bytesOf = (dataView) => new Uint8Array(dataView.buffer.slice(dataView.byteOffset, dataView.byteOffset + dataView.byteLength));
+const hex = (bytes) => Array.from(bytes, (b) => b.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+
+// ---- Connecting ------------------------------------------------------------
+async function connect() {
+  if (!navigator.bluetooth) {
+    setStatus("This browser can't use Bluetooth. Open the page in Chrome or Edge.");
+    return;
+  }
+  try {
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: ["heart_rate"] }, { namePrefix: "Polar" }],
+      optionalServices: ["heart_rate", PMD_SERVICE]
+    });
+  } catch (err) {
+    setStatus(err.name === "NotFoundError" ? "No sensor selected." : "Couldn't open the device list: " + err.message);
+    log("Device picker: " + err.name + ": " + err.message, true);
+    return;
+  }
+  log("Selected " + device.name + ".");
+  device.removeEventListener("gattserverdisconnected", onDisconnected);
+  device.addEventListener("gattserverdisconnected", onDisconnected);
+
+  connecting = true;
+  let lastError = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      setStatus("Connecting (attempt " + attempt + " of " + MAX_ATTEMPTS + "). If Windows asks to pair, select Allow and wait for “connection succeeded.”");
+      await setUp();
+      connecting = false;
+      document.getElementById("connect").hidden = true;
+      document.getElementById("disconnect").hidden = false;
+      setStatus("Connected to " + device.name + ". Move the sensor around, then set it down on the table.");
+      return;
+    } catch (err) {
+      lastError = err;
+      log("Attempt " + attempt + " failed: " + err.name + ": " + err.message, true);
+      if (device.gatt.connected) device.gatt.disconnect();
+      if (err.afterHeartRate) {
+        // Starting over would restart Windows pairing, so stop and explain instead.
+        connecting = false;
+        setStatus("Heart rate worked, but Polar's motion data stayed locked (" + err.message +
+                  "). Select Connect sensor, select Allow, and wait for “connection succeeded” before pressing the start button.");
+        document.getElementById("connect").hidden = false;
+        document.getElementById("disconnect").hidden = true;
+        return;
+      }
+      await wait(1000 * attempt);
+    }
+  }
+  connecting = false;
+  setStatus("Connection failed after " + MAX_ATTEMPTS + " attempts: " + lastError.message);
+}
+
+async function setUp() {
+  firstFrameLogged = false;
+  log("Connecting to the sensor…");
+  const server = await device.gatt.connect();
+
+  log("Connected. Starting heart rate…");
+  const hrService = await server.getPrimaryService("heart_rate");
+  const hrChar = await hrService.getCharacteristic("heart_rate_measurement");
+  hrChar.oncharacteristicvaluechanged = (e) => onHeartRate(e.target.value);
+  const firstReading = waitForHeartRate(60000);
+  await hrChar.startNotifications();
+  log("Heart rate started. Waiting for the first reading…");
+  setStatus("If Windows shows a pairing popup, select Allow.");
+  await firstReading;
+  log("Heart rate is flowing. Giving Windows time to finish pairing before starting motion…");
+  await waitForPairingToSettle(30);
+
+  try {
+    await startMotion(server);
+  } catch (err) {
+    err.afterHeartRate = true;     // tells connect() not to start over and restart pairing
+    throw err;
+  }
+}
+
+async function startMotion(server) {
+  if (!device.gatt.connected) throw new Error("The sensor disconnected while waiting for pairing.");
+  log("Opening Polar's measurement service…");
+  const pmd = await server.getPrimaryService(PMD_SERVICE);
+  controlPoint = await pmd.getCharacteristic(PMD_CONTROL);
+  const dataChar = await pmd.getCharacteristic(PMD_DATA);
+  controlPoint.oncharacteristicvaluechanged = onControlPoint;
+  await controlPoint.startNotifications();
+  dataChar.oncharacteristicvaluechanged = (e) => onPmdData(e.target.value);
+  await dataChar.startNotifications();
+  log("Measurement service ready.");
+
+  try {
+    const features = bytesOf(await controlPoint.readValue());
+    if (features[0] === 0x0F) {
+      const names = { 0: "ECG", 1: "PPG", 2: "accelerometer", 3: "PPI", 5: "gyroscope", 6: "magnetometer" };
+      const offered = Object.keys(names).filter((bit) => (features[1] >> bit) & 1).map((bit) => names[bit]);
+      log("Sensor offers: " + offered.join(", ") + ".");
+    }
+  } catch (err) {
+    log("Couldn't read the feature list (not essential): " + err.message);
+  }
+
+  log("Asking for accelerometer settings…");
+  const settingsResponse = await sendCommand([CMD_GET_SETTINGS, ACC]);
+  const available = parseSettings(settingsResponse.params);
+  log("Available: " + describeSettings(available) + ".");
+
+  const { bytes, summary } = chooseSettings(available);
+  log("Starting accelerometer with " + summary + "…");
+  let startResponse;
+  try {
+    startResponse = await sendCommand([CMD_START, ACC, ...bytes]);
+  } catch (err) {
+    if (err.status !== 6) throw err;           // 6 = already running from an earlier session
+    log("It was already running. Restarting it…");
+    await sendCommand([CMD_STOP, ACC]);
+    startResponse = await sendCommand([CMD_START, ACC, ...bytes]);
+  }
+  const started = parseSettings(startResponse.params);
+  accFactor = started[5] ? new DataView(started[5][0].buffer).getFloat32(0, true) : 1;
+  log("Accelerometer started (conversion factor " + accFactor + "). Motion data should arrive within a second or two.");
+}
+
+// Windows can need 20 to 30 seconds after "Allow" before Polar's measurement
+// service unlocks. Wait, with a button to skip ahead once the popup says
+// "connection succeeded".
+function waitForPairingToSettle(seconds) {
+  return new Promise((resolve) => {
+    let remaining = seconds;
+    const button = document.createElement("button");
+    button.className = "secondary";
+    button.style.marginTop = ".75rem";
+    button.textContent = "Windows says “connection succeeded”: start motion now";
+    document.getElementById("status").after(button);
+    const finish = () => { clearInterval(timer); button.remove(); resolve(); };
+    button.addEventListener("click", () => { log("Start motion selected."); finish(); });
+    const tick = () => {
+      if (!device.gatt.connected) { finish(); return; }
+      setStatus("Heart rate is flowing. When the Windows popup says “connection succeeded,” select the button below. " +
+                "Otherwise motion starts automatically in " + remaining + " seconds.");
+      if (remaining-- <= 0) finish();
+    };
+    const timer = setInterval(tick, 1000);
+    tick();
+  });
+}
+
+function disconnect() {
+  log("Disconnect selected.");
+  if (device && device.gatt.connected) device.gatt.disconnect();
+}
+
+function onDisconnected() {
+  log("The sensor's connection closed.", !connecting);
+  if (connecting) return;
+  document.getElementById("connect").hidden = false;
+  document.getElementById("disconnect").hidden = true;
+  setStatus("Sensor disconnected. Select Connect sensor to reconnect.");
+}
+
+// ---- Control point: commands and responses ---------------------------------
+let pendingResponse = null;
+
+function onControlPoint(event) {
+  const d = bytesOf(event.target.value);
+  if (d[0] !== 0xF0) return;                     // 0xF0 marks a response to our command
+  const response = { opCode: d[1], type: d[2], status: d[3], params: d.length > 5 ? d.slice(5) : new Uint8Array() };
+  if (pendingResponse) { const resolve = pendingResponse; pendingResponse = null; resolve(response); }
+}
+
+async function sendCommand(bytes) {
+  const answer = new Promise((resolve, reject) => {
+    pendingResponse = resolve;
+    setTimeout(() => {
+      if (pendingResponse === resolve) { pendingResponse = null; reject(new Error("The sensor didn't answer in time.")); }
+    }, 6000);
+  });
+  const data = new Uint8Array(bytes);
+  if (controlPoint.writeValueWithResponse) await controlPoint.writeValueWithResponse(data);
+  else await controlPoint.writeValue(data);
+  const response = await answer;
+  if (response.status !== 0) {
+    const err = new Error("The sensor refused the request (" + (STATUS_NAMES[response.status] || "error " + response.status) + ").");
+    err.status = response.status;
+    throw err;
+  }
+  return response;
+}
+
+// ---- Settings ----------------------------------------------------------------
+// Settings arrive as [type, count, value, value, ...] repeated; values are little-endian.
+function parseSettings(bytes) {
+  const out = {};
+  let offset = 0;
+  while (offset + 1 < bytes.length) {
+    const type = bytes[offset++], count = bytes[offset++], size = SETTING_SIZES[type];
+    if (size === undefined) break;
+    out[type] = [];
+    for (let i = 0; i < count; i++) { out[type].push(bytes.slice(offset, offset + size)); offset += size; }
+  }
+  return out;
+}
+const unsignedLE = (b) => b.reduce((value, byte, i) => value + byte * 2 ** (8 * i), 0);
+
+function describeSettings(settings) {
+  return Object.keys(settings).filter((t) => t !== "5")
+    .map((t) => (SETTING_NAMES[t] || "type " + t) + " " + settings[t].map(unsignedLE).join("/"))
+    .join(", ");
+}
+
+function chooseSettings(available) {
+  const pick = (type, preferred, fallback) => {
+    const values = (available[type] || []).map(unsignedLE);
+    if (!values.length) return null;
+    return values.includes(preferred) ? preferred : fallback(values);
+  };
+  const chosen = [
+    [0, pick(0, 52, (v) => Math.min(...v))],     // sample rate (Hz)
+    [1, pick(1, 16, (v) => Math.max(...v))],     // resolution (bits)
+    [2, pick(2, 8, (v) => Math.max(...v))],      // range (G)
+    [4, pick(4, 3, (v) => Math.max(...v))]       // channels
+  ].filter(([, value]) => value !== null);
+  const bytes = [];
+  for (const [type, value] of chosen) {
+    bytes.push(type, 1);
+    for (let i = 0; i < SETTING_SIZES[type]; i++) bytes.push((value >> (8 * i)) & 0xFF);
+  }
+  return { bytes, summary: chosen.map(([t, v]) => SETTING_NAMES[t] + " " + v).join(", ") };
+}
+
+// ---- Decoding motion data --------------------------------------------------
+// Frame: [measurement type][8-byte timestamp][frame type][content...]
+// Frame type bit 7 set = delta-compressed content.
+function onPmdData(dataView) {
+  const b = bytesOf(dataView);
+  if (b.length < 10 || (b[0] & 0x3F) !== ACC) return;
+  const frameType = b[9] & 0x7F, compressed = (b[9] & 0x80) !== 0, content = b.subarray(10);
+  let samples;
+  try {
+    if (compressed) {
+      const raw = parseDeltaFrames(content, 3, 16);
+      // Compressed type 0 arrives in G units (scaled by the factor); type 1 in milli-G.
+      const scale = frameType === 0 ? accFactor * 1000 : accFactor;
+      samples = raw.map((s) => s.map((v) => v * scale));
+    } else {
+      const size = frameType === 0 ? 1 : frameType === 1 ? 2 : 3;
+      samples = [];
+      for (let o = 0; o + 3 * size <= content.length; o += 3 * size) {
+        samples.push([readSignedLE(content, o, size), readSignedLE(content, o + size, size), readSignedLE(content, o + 2 * size, size)]);
+      }
+    }
+  } catch (err) {
+    log("Couldn't decode a motion frame: " + err.message + " (" + hex(b.subarray(0, 16)) + "…)", true);
+    return;
+  }
+  if (!firstFrameLogged) {
+    firstFrameLogged = true;
+    log("First motion data: frame type " + frameType + (compressed ? " (compressed)" : "") + ", " + samples.length +
+        " samples, first sample X " + Math.round(samples[0][0]) + " Y " + Math.round(samples[0][1]) + " Z " + Math.round(samples[0][2]) + " mG.");
+  }
+  addSamples(samples);
+}
+
+function readSignedLE(bytes, offset, size) {
+  let value = 0;
+  for (let i = 0; i < size; i++) value |= bytes[offset + i] << (8 * i);
+  const bits = size * 8;
+  if (bits < 32 && (value & (1 << (bits - 1)))) value -= 2 ** bits;
+  return value;
+}
+
+// Delta compression: a full reference sample, then blocks of
+// [delta bit width][sample count][packed deltas, least significant bit first].
+function parseDeltaFrames(bytes, channels, resolution) {
+  const refSize = Math.ceil(resolution / 8);
+  let offset = 0, last = [];
+  for (let c = 0; c < channels; c++) { last.push(readSignedLE(bytes, offset, refSize)); offset += refSize; }
+  const samples = [last];
+  while (offset + 1 < bytes.length) {
+    const width = bytes[offset++], count = bytes[offset++];
+    let bit = 0;
+    for (let s = 0; s < count; s++) {
+      const next = [];
+      for (let c = 0; c < channels; c++) {
+        let delta = 0;
+        for (let i = 0; i < width; i++, bit++) delta |= ((bytes[offset + (bit >> 3)] >> (bit & 7)) & 1) << i;
+        if (width > 0 && (delta & (1 << (width - 1)))) delta -= 2 ** width;
+        next.push(last[c] + delta);
+      }
+      samples.push(next);
+      last = next;
+    }
+    offset += Math.ceil((width * count * channels) / 8);
+  }
+  return samples;
+}
+
+// ---- Heart rate ------------------------------------------------------------
+let heartRateWaiter = null;
+
+function waitForHeartRate(ms) {
+  return new Promise((resolve, reject) => {
+    heartRateWaiter = resolve;
+    setTimeout(() => {
+      if (heartRateWaiter === resolve) {
+        heartRateWaiter = null;
+        reject(new Error("No heart rate reading arrived. If Windows showed a pairing popup, it may not have been accepted."));
+      }
+    }, ms);
+  });
+}
+
+function onHeartRate(dataView) {
+  if (heartRateWaiter) { const resolve = heartRateWaiter; heartRateWaiter = null; resolve(); }
+  const flags = dataView.getUint8(0);
+  const bpm = (flags & 1) ? dataView.getUint16(1, true) : dataView.getUint8(1);
+  document.getElementById("bpm").firstChild.nodeValue = bpm;
+}
+
+
+
+// ---- Viewer: incoming samples ----------------------------------------------
+const CHART_SECONDS = 10, SAMPLE_RATE = 52;
+const MAX_POINTS = CHART_SECONDS * SAMPLE_RATE;
+const series = [[], [], []];
+let smoothed = null;                 // low-passed vector for the cube
+let reference = null;                // inverse rotation captured by the level button
+let sampleTimes = [];
+
+// Samples arrive in bundles (roughly a second's worth at a time). Instead of applying
+// a bundle all at once, which makes the cube jump, queue the samples and play them
+// back at the sensor's real pace, one animation frame at a time.
+const queue = [];
+let bundleSize = 26;                 // running average of samples per bundle
+let lastFrameTime = null, carry = 0;
+
+let lastBundleTime = null, bundleInterval = null;
+let display = null;                  // what the cube actually shows, gliding toward the readings
+
+function addSamples(samples) {
+  const now = performance.now();
+  queue.push(...samples);
+  bundleSize = bundleSize * 0.8 + samples.length * 0.2;
+  if (lastBundleTime !== null) {
+    const gap = (now - lastBundleTime) / 1000;
+    bundleInterval = bundleInterval === null ? gap : bundleInterval * 0.8 + gap * 0.2;
+  }
+  lastBundleTime = now;
+  for (let i = 0; i < samples.length; i++) sampleTimes.push(now);
+  while (sampleTimes.length && now - sampleTimes[0] > 2000) sampleTimes.shift();
+}
+
+function smoothing() { return Number(document.getElementById("smoothing").value); }
+
+function playBack(now) {
+  if (lastFrameTime === null) { lastFrameTime = now; return; }
+  const dt = Math.min((now - lastFrameTime) / 1000, 0.25);
+  lastFrameTime = now;
+  // Aim to keep about one bundle waiting; speed up a little when the queue grows,
+  // slow down a little when it runs low, so the delay stays short and steady.
+  const target = Math.max(bundleSize * 1.1, 4);
+  const speed = Math.min(1.6, Math.max(0.6, 1 + 0.5 * (queue.length - target) / target));
+  let count;
+  if (lowDelay()) {
+    count = queue.length;              // use every sample the moment it arrives
+    carry = 0;
+  } else {
+    carry += SAMPLE_RATE * dt * speed;
+    count = Math.floor(carry);
+    carry -= count;
+    if (queue.length > target * 4) count += queue.length - Math.round(target);   // catch up after a stall
+  }
+  // Smoothing is set per second, so it behaves the same at any frame rate.
+  const alpha = 1 - Math.pow(1 - smoothing(), 52 / SAMPLE_RATE);
+  while (count-- > 0 && queue.length) {
+    const s = queue.shift();
+    for (let c = 0; c < 3; c++) { series[c].push(s[c]); if (series[c].length > MAX_POINTS) series[c].shift(); }
+    smoothed = smoothed ? smoothed.map((v, c) => v + alpha * (s[c] - v)) : s.slice();
+  }
+  // Glide the cube toward the latest smoothed reading. In low-delay mode the
+  // readings jump once per packet, so glide a little longer to hide the step.
+  if (smoothed) {
+    const glide = lowDelay() ? 0.15 : 0.03;          // seconds
+    const k = 1 - Math.exp(-dt / glide);
+    display = display ? display.map((v, c) => v + k * (smoothed[c] - v)) : smoothed.slice();
+  }
+}
+
+function lowDelay() { return document.getElementById("modeLow").checked; }
+
+// ---- Drawing the chart -----------------------------------------------------
+function drawChart() {
+  const canvas = document.getElementById("chart");
+  const ratio = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== w * ratio || canvas.height !== h * ratio) { canvas.width = w * ratio; canvas.height = h * ratio; }
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  const css = getComputedStyle(document.documentElement);
+
+  // Scale: at least ±1200 mG so gravity fits, growing for big movements.
+  let peak = 1200;
+  for (const s of series) for (const v of s) if (Math.abs(v) > peak) peak = Math.abs(v);
+  peak = Math.ceil(peak / 500) * 500;
+  const y = (v) => h / 2 - (v / peak) * (h / 2 - 14);
+  const x = (i, len) => ((MAX_POINTS - len + i) / (MAX_POINTS - 1)) * w;
+
+  ctx.strokeStyle = css.getPropertyValue("--line"); ctx.lineWidth = 1;
+  ctx.fillStyle = css.getPropertyValue("--muted"); ctx.font = "12px system-ui, sans-serif";
+  for (const g of [-1000, 0, 1000]) {
+    if (Math.abs(g) > peak) continue;
+    ctx.beginPath(); ctx.moveTo(0, y(g)); ctx.lineTo(w, y(g)); ctx.stroke();
+    ctx.fillText((g > 0 ? "+" : "") + g, 6, y(g) - 4);
+  }
+
+  ["--x", "--y", "--z"].forEach((colour, c) => {
+    const s = series[c];
+    if (s.length < 2) return;
+    ctx.strokeStyle = css.getPropertyValue(colour); ctx.lineWidth = 2; ctx.lineJoin = "round";
+    ctx.beginPath();
+    s.forEach((v, i) => i ? ctx.lineTo(x(i, s.length), y(v)) : ctx.moveTo(x(i, s.length), y(v)));
+    ctx.stroke();
+  });
+}
+
+// ---- Orienting the cube ----------------------------------------------------
+// The accelerometer reads +1 G along whichever axis points away from the floor.
+// We find the rotation that turns that measured "up" onto the screen's up,
+// and apply it to a cube whose faces are labelled with the sensor's axes.
+function rotationBetween(a, b) {               // rotation matrix taking unit vector a onto unit vector b
+  const v = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const c = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  if (c < -0.9999) return [[1, 0, 0], [0, -1, 0], [0, 0, -1]];   // upside down: flip about X
+  const k = 1 / (1 + c);
+  return [
+    [v[0] * v[0] * k + c,    v[0] * v[1] * k - v[2], v[0] * v[2] * k + v[1]],
+    [v[1] * v[0] * k + v[2], v[1] * v[1] * k + c,    v[1] * v[2] * k - v[0]],
+    [v[2] * v[0] * k - v[1], v[2] * v[1] * k + v[0], v[2] * v[2] * k + c]
+  ];
+}
+const normalise = (v) => { const m = Math.hypot(...v) || 1; return v.map((x) => x / m); };
+const multiply = (A, B) => A.map((row) => [0, 1, 2].map((j) => row[0] * B[0][j] + row[1] * B[1][j] + row[2] * B[2][j]));
+
+function orientCube() {
+  if (!display) return;
+  const up = normalise(display);
+  // World frame: X right, Y up, Z toward you. Sensor axes map straight onto the cube's labelled faces.
+  let R = rotationBetween(up, [0, 1, 0]);
+  if (reference) R = multiply(R, reference);
+  // CSS uses Y pointing down, so flip Y on both sides: M = F R F, with F = diag(1, -1, 1).
+  const M = [
+    [ R[0][0], -R[0][1],  R[0][2]],
+    [-R[1][0],  R[1][1], -R[1][2]],
+    [ R[2][0], -R[2][1],  R[2][2]]
+  ];
+  // matrix3d takes columns, one after another.
+  const m = [M[0][0], M[1][0], M[2][0], 0, M[0][1], M[1][1], M[2][1], 0, M[0][2], M[1][2], M[2][2], 0, 0, 0, 0, 1];
+  document.getElementById("cube").style.transform = "matrix3d(" + m.map((n) => n.toFixed(5)).join(",") + ")";
+
+  const pitch = Math.atan2(-up[0], Math.hypot(up[1], up[2])) * 180 / Math.PI;
+  const roll = Math.atan2(up[1], up[2]) * 180 / Math.PI;
+  document.getElementById("tilt").textContent = "Pitch " + pitch.toFixed(0) + "° · Roll " + roll.toFixed(0) + "°";
+}
+
+// "Set as level": show the cube square-on in whatever position the sensor is in now.
+// Display rotation = current rotation × (rotation at that moment)⁻¹, so it starts at no rotation.
+const transpose = (A) => [0, 1, 2].map((i) => [0, 1, 2].map((j) => A[j][i]));
+document.getElementById("zero").addEventListener("click", (e) => {
+  if (reference) {
+    reference = null;
+    e.target.textContent = "Set current position as level";
+    log("Level reset to the sensor's own axes.");
+  } else if (display) {
+    reference = transpose(rotationBetween(normalise(display), [0, 1, 0]));
+    e.target.textContent = "Clear level";
+    log("Current position set as level.");
+  }
+});
+
+// ---- Frame loop ------------------------------------------------------------
+function frame(now) {
+  playBack(now);
+  if (series[0].length) {
+    const last = series.map((s) => s[s.length - 1]);
+    document.getElementById("vx").textContent = Math.round(last[0]);
+    document.getElementById("vy").textContent = Math.round(last[1]);
+    document.getElementById("vz").textContent = Math.round(last[2]);
+    const pageDelay = queue.length / SAMPLE_RATE;
+    document.getElementById("rate").textContent =
+      Math.round(sampleTimes.length / 2) + " samples/s" +
+      (bundleInterval ? " · sensor sends ~" + Math.round(bundleSize) + " every " + bundleInterval.toFixed(2) + " s" : "") +
+      " · page holding " + pageDelay.toFixed(2) + " s";
+  }
+  drawChart();
+  orientCube();
+  requestAnimationFrame(frame);
+}
+
+document.getElementById("connect").addEventListener("click", connect);
+document.getElementById("disconnect").addEventListener("click", disconnect);
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

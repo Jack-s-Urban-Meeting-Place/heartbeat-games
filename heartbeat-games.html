@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heartbeat Games | P1:idle P2:idle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+  :root {
+    --bg: #f3efe8; --ink: #1f1a24; --muted: #6c6472; --line: #ddd5ca; --panel: #ffffff;
+    --p1: #e0662b; --p2: #7a4fd6; --good: #2a9a5a; --bad: #c8102e; --track: #ebe4da;
+    --g1: #ef476f; --g2: #118ab2; --g3: #f2a541;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17131c; --ink: #f2edf5; --muted: #a79fae; --line: #3a3241; --panel: #221c29;
+      --p1: #ff8a50; --p2: #a989ff; --good: #4fd18b; --bad: #ff5a6e; --track: #2f2837;
+      --g1: #ff6b8e; --g2: #3fb6dc; --g3: #ffbf5e;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); overflow: hidden;
+         font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.4; }
+  .screen { position: fixed; inset: 0; display: none; flex-direction: column; padding: 4vh 5vw; }
+  .screen.active { display: flex; }
+  h1 { font-size: clamp(2rem, 5vw, 4rem); font-weight: 800; margin: 0; letter-spacing: -.02em; }
+  .sub { font-size: clamp(1rem, 2vw, 1.5rem); color: var(--muted); margin: .5rem 0 0; }
+  .p1 { --player: var(--p1); } .p2 { --player: var(--p2); }
+
+  /* ---- Setup ---- */
+  #setup { justify-content: center; gap: 4vh; }
+  .overall { height: 1.6rem; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .overall > div { height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--p1), var(--p2)); transition: width .4s ease-out; }
+  .setup-players { display: grid; grid-template-columns: 1fr 1fr; gap: 3vw; }
+  .setup-card { background: var(--panel); border-radius: 22px; padding: 2.5vh 2vw; border-top: 10px solid var(--player); }
+  .setup-card h2 { margin: 0 0 1.5vh; font-size: clamp(1.4rem, 3vw, 2.4rem); color: var(--player); }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.2vh; font-size: clamp(1rem, 1.9vw, 1.5rem); }
+  .steps li { display: flex; align-items: center; gap: .75rem; color: var(--muted); }
+  .steps li .mark { width: 1.6em; height: 1.6em; border-radius: 50%; border: 3px solid var(--line); display: grid; place-items: center;
+                    font-size: .8em; font-weight: 800; flex: none; }
+  .steps li.now { color: var(--ink); font-weight: 600; }
+  .steps li.now .mark { border-color: var(--player); animation: pulse 1.2s ease-in-out infinite; }
+  .steps li.done .mark { background: var(--good); border-color: var(--good); color: #fff; }
+  .steps li.done { color: var(--ink); }
+  .steps .time { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 400; }
+  .bar { height: 1rem; border-radius: 999px; background: var(--track); overflow: hidden; margin-top: 2vh; }
+  .bar > div { height: 100%; width: 0; background: var(--player); border-radius: 999px; transition: width .4s ease-out; }
+  .setup-card.failed { border-top-color: var(--bad); }
+  .setup-card.failed .bar > div { background: var(--bad); }
+  .card-note { margin: 1.5vh 0 0; font-size: clamp(.95rem, 1.6vw, 1.25rem); color: var(--muted); min-height: 1.5em; }
+  .setup-card.failed .card-note { color: var(--bad); font-weight: 600; }
+  .setup-hint { font-size: clamp(1rem, 1.8vw, 1.4rem); color: var(--muted); text-align: center; margin: 0; }
+  @keyframes pulse { 50% { transform: scale(1.15); } }
+
+  /* ---- Menu ---- */
+  #menu { gap: 3vh; }
+  .tiles { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3vw; align-items: stretch; }
+  .tile { border-radius: 28px; padding: 3vh 2vw; color: #fff; display: flex; flex-direction: column; justify-content: space-between;
+          background: var(--tile); box-shadow: 0 10px 0 color-mix(in srgb, var(--tile) 65%, #000); }
+  .tile .num { font-size: clamp(3rem, 9vw, 8rem); font-weight: 800; line-height: 1; opacity: .9; }
+  .tile .icon { font-size: clamp(3rem, 8vw, 7rem); line-height: 1; text-align: center; }
+  .tile .name { font-size: clamp(1.4rem, 3vw, 2.6rem); font-weight: 800; }
+  .tile .shot { flex: 1; min-height: 0; margin: 1.5vh 0; border-radius: 18px; background: center / cover no-repeat #0003;
+                box-shadow: inset 0 0 0 3px #ffffff40; }
+  /* A tile with a picture: the picture fills it; the number sits in a badge at the top, the name across the bottom. */
+  .tile.has-art { position: relative; overflow: hidden; padding: 0; }
+  .tile.has-art .shot { position: absolute; inset: 0; margin: 0; border-radius: inherit; box-shadow: none; }
+  .tile.has-art .num, .tile.has-art .name { z-index: 1; }
+  .tile.has-art .num { position: relative; align-self: flex-start; margin: 2.6vh 0 0 1.8vw; padding: .4vh 1.4vw .2vh; border-radius: 22px;
+                       background: var(--tile); opacity: 1; font-size: clamp(3rem, 6.5vw, 7rem); box-shadow: 0 6px 0 color-mix(in srgb, var(--tile) 65%, #000); }
+  .tile.has-art .name { position: relative; padding: 9vh 1.8vw 3vh; font-size: clamp(2rem, 4.4vw, 4.6rem); line-height: 1.05;
+                        background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--tile) 88%, #000) 62%); }
+  .tile.soon { --tile: #c9c2b8; color: #f6f2ec; box-shadow: 0 10px 0 #aaa297; }
+  .tile.soon .name { font-size: clamp(1.2rem, 2.4vw, 2.1rem); }
+  @media (prefers-color-scheme: dark) { .tile.soon { --tile: #3a3241; color: #8d8494; box-shadow: 0 10px 0 #2a242f; } }
+
+  /* ---- A full-screen game (fullScreen: true): the view fills the screen, the words shrink into corners ---- */
+  #game.full #gameStage { position: fixed; inset: 0; z-index: 1; }
+  #game.full .fl-view { border-radius: 0 !important; }
+  #game.full .game-head { position: fixed; top: 2.2vh; left: 2vw; z-index: 4; gap: .7vw; pointer-events: none;
+                          color: #fff; text-shadow: 0 2px 6px rgba(0,0,0,.5); }
+  #game.full .game-head .icon { font-size: clamp(1.2rem, 2.4vw, 2.1rem); }
+  #game.full .game-head h1 { font-size: clamp(1.1rem, 2.1vw, 1.9rem); }
+  #game.full .game-head .timer { font-size: clamp(1.1rem, 2.1vw, 1.9rem); margin-left: 1vw; }
+  #game.full .footer { position: fixed; right: 2vw; bottom: 3.2vh; z-index: 4; pointer-events: none; }
+  #game.full .footer .chips { display: none; }
+  #game.full .footer .hint { font-size: clamp(.8rem, 1.3vw, 1.15rem); color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+  #game.full .fl-hud { top: 9vh !important; }       /* a game's own scores sit below the title */
+  .footer { display: flex; justify-content: space-between; align-items: center; gap: 2vw; flex-wrap: wrap; }
+  .chips { display: flex; gap: 1.5vw; }
+  .chip { display: flex; align-items: center; gap: .6rem; background: var(--panel); border-radius: 999px; padding: .5rem 1rem .5rem .6rem;
+          font-size: clamp(.9rem, 1.6vw, 1.3rem); font-weight: 600; border: 3px solid var(--player); }
+  .chip .meter { width: 5rem; height: .7rem; border-radius: 999px; background: var(--track); overflow: hidden; }
+  .chip .meter > div { height: 100%; width: 0; background: var(--player); }
+  .chip.off { border-color: var(--line); color: var(--muted); }
+  .hint { font-size: clamp(1rem, 2vw, 1.6rem); color: var(--muted); }
+  .key { display: inline-block; min-width: 1.8em; padding: .05em .45em; border-radius: .4em; background: var(--ink); color: var(--bg);
+         font-weight: 800; text-align: center; }
+
+  /* ---- Game ---- */
+  #game { gap: 2vh; }
+  .game-head { display: flex; align-items: center; gap: 1.5vw; }
+  .game-head .icon { font-size: clamp(2.5rem, 6vw, 5rem); }
+  .game-body { flex: 1; min-height: 0; display: grid; place-items: center; text-align: center; }
+  .press { font-size: clamp(2.5rem, 7vw, 6.5rem); font-weight: 800; white-space: nowrap; margin: 5vh 0 0; }
+  .big { font-size: clamp(3rem, 12vw, 11rem); font-weight: 800; line-height: 1; }
+  .timer { font-size: clamp(1.5rem, 3.5vw, 3rem); font-weight: 800; font-variant-numeric: tabular-nums; margin-left: auto; }
+  .notice { position: fixed; left: 50%; top: 3vh; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+            padding: .8rem 1.4rem; border-radius: 14px; font-size: clamp(1rem, 2vw, 1.5rem); font-weight: 600; display: none; z-index: 5; }
+  .notice.show { display: block; }
+  .demo-badge { position: fixed; top: 1rem; right: 1rem; background: var(--g3); color: #000; font-weight: 800; padding: .3rem .8rem; border-radius: 999px; display: none; z-index: 5; }
+  .demo .demo-badge { display: block; }
+
+  #log { display: none; }
+  .version { position: fixed; right: 1rem; bottom: .6rem; font-size: .8rem; color: var(--muted); opacity: .7; z-index: 4; }
+  /* The open-source credit beside the version: on the setup and menu screens only, so it never covers a game. */
+  .version a { color: inherit; }
+  body:has(#game.active) .version .credit { display: none; }
+  #countdown { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 3;
+               font-size: clamp(4rem, 16vw, 14rem); font-weight: 800; text-shadow: 0 4px 0 var(--bg); }
+  #gameIntro, #gameResults { flex: 1; display: grid; place-items: center; text-align: center; }
+  #gameIntro[hidden], #gameResults[hidden], #gameStage[hidden] { display: none; }
+  #gameStage { flex: 1; min-height: 0; display: flex; position: relative; }
+  .howto { font-size: clamp(1.3rem, 3vw, 2.4rem); max-width: 60rem; margin: 0 auto; white-space: pre-line; }   /* "\n" in howTo starts a new line */
+  /* A game's picture (introArt), e.g. how to stand: big on the left, the words on the right. */
+  #gameIntro.with-art > div { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+                              grid-template-areas: "art text" "press press"; align-items: center; gap: 1vh 3vw; width: 100%; }
+  .intro-art { grid-area: art; width: 100%; max-height: 50vh; object-fit: contain; background: #fff;
+               border-radius: 26px; padding: 2.5vh 2vw; }
+  .intro-art[hidden] { display: none; }
+  #gameIntro.with-art .howto { grid-area: text; font-size: clamp(1.2rem, 2.5vw, 2.6rem); font-weight: 600; line-height: 1.5; text-align: left; margin: 0; }
+  #gameIntro.with-art .press { grid-area: press; margin-top: 2vh; }
+  #gameResults.custom { place-items: stretch; text-align: left; }
+  #resultsCustom { position: relative; min-height: 0; }
+  #resultsPlain[hidden], #resultsCustom[hidden] { display: none; }
+  .results-headline { font-size: clamp(2.5rem, 8vw, 7rem); font-weight: 800; margin: 0; line-height: 1.05; }
+  .results-detail { font-size: clamp(1.2rem, 2.5vw, 2rem); color: var(--muted); margin: 2vh 0 0; }
+
+  /* ---- Shared styles that games can use ---- */
+  .hg-lanes { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 4vw; }
+  .hg-lane { display: flex; flex-direction: column; gap: 1.5vh; min-height: 0; }
+  .hg-lane-name { font-size: clamp(1.4rem, 3vw, 2.4rem); font-weight: 800; color: var(--player); text-align: center; }
+  .hg-track { flex: 1; min-height: 20vh; border-radius: 26px; background: var(--track); position: relative; overflow: hidden; }
+  .hg-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--player); border-radius: 26px 26px 0 0; }
+  .hg-score { font-size: clamp(1.4rem, 3vw, 2.4rem); font-weight: 800; font-variant-numeric: tabular-nums; text-align: center; }
+  @media (prefers-reduced-motion: reduce) { .steps li.now .mark { animation: none; } }
+</style>
+</head>
+<body>
+
+<!-- ======================= Setup screen ======================= -->
+<section class="screen active" id="setup" aria-labelledby="setupTitle">
+  <div>
+    <h1 id="setupTitle">Getting ready…</h1>
+    <p class="sub" id="setupSub">Connecting the sensors. This takes about a minute per sensor. There’s nothing to do but wait.</p>
+  </div>
+  <div class="overall" role="progressbar" aria-label="Overall progress" aria-valuemin="0" aria-valuemax="100"><div id="overallFill"></div></div>
+  <div class="setup-players">
+    <div class="setup-card p1" id="card1"></div>
+    <div class="setup-card p2" id="card2"></div>
+  </div>
+  <p class="setup-hint" id="setupHint">&nbsp;</p>
+</section>
+
+<!-- ======================= Menu screen ======================= -->
+<section class="screen" id="menu" aria-label="Choose a game">
+  <div>
+    <h1>Pick a game!</h1>
+    <p class="sub">Press a number button on the controller.</p>
+  </div>
+  <div class="tiles" id="tiles"></div>
+  <div class="footer"><div class="chips" id="chips"></div><div class="hint"></div></div>
+</section>
+
+<!-- ======================= Game screen ======================= -->
+<section class="screen" id="game" aria-live="polite">
+  <div class="game-head">
+    <span class="icon" id="gameIcon"></span>
+    <h1 id="gameName"></h1>
+    <span class="timer" id="gameTimer"></span>
+  </div>
+  <div id="gameIntro" hidden>
+    <div>
+      <img class="intro-art" id="gameArt" alt="" hidden>
+      <p class="howto" id="gameHowTo"></p>
+      <p class="press">Press <span class="key">START</span></p>
+    </div>
+  </div>
+  <div id="gameStage" hidden></div>
+  <div id="gameResults" hidden>
+    <div id="resultsPlain">
+      <p class="results-headline" id="resultsHeadline"></p>
+      <p class="results-detail" id="resultsDetail"></p>
+    </div>
+    <div id="resultsCustom" hidden></div>   <!-- a game's own results screen (showResults) -->
+  </div>
+  <div class="footer"><div class="chips" id="gameChips"></div><div class="hint" id="gameHint"></div></div>
+</section>
+
+<div id="countdown" aria-live="assertive"></div>
+<div class="notice" id="notice" role="status"></div>
+<div class="demo-badge">DEMO: simulated sensors</div>
+<div class="version"><span class="credit">Free and open source under the <a href="LICENSE">MIT License</a>
+  · Built with Claude Code 2.1.317 (model: Claude Opus 5.5) · </span><span id="version"></span></div>
+<ol id="log"></ol>
+
+<template id="setupCardTemplate">
+  <h2></h2>
+  <ol class="steps">
+    <li data-step="finding"><span class="mark">1</span>Finding the sensor<span class="time"></span></li>
+    <li data-step="pairing"><span class="mark">2</span>Pairing with the laptop<span class="time"></span></li>
+    <li data-step="starting"><span class="mark">3</span>Starting the motion data<span class="time"></span></li>
+    <li data-step="ready"><span class="mark">✓</span>Ready to play<span class="time"></span></li>
+  </ol>
+  <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><div></div></div>
+  <p class="card-note"></p>
+</template>
+
+<!-- Settings, then the system, then the games, then start. -->
+<script src="config.js"></script>
+<script src="js/sensor.js"></script>
+<script src="js/app.js"></script>
+
+<!-- Games: one file each. To add a game, put its file in the games folder and add a line here. -->
+<script src="js/vendor/three.min.js"></script>   <!-- the 3D library (three.js r158, MIT licence) -->
+<script src="games/lib/glow.js"></script>       <!-- the soft glow round bright things (both 3D games) -->
+<script src="games/lib/flight.js"></script>      <!-- shared by the flying games; load first -->
+<script src="games/lib/crow-model.js"></script> <!-- the crow's look, made in Blender (blender/) -->
+<script src="games/lib/crow.js"></script>       <!-- the crow (the birds in the flying games) -->
+<script src="games/lib/flight3d.js"></script>    <!-- the 3D world for the flying games -->
+<script src="games/lib/photo-finish.js"></script> <!-- the end-of-round Polaroid photo -->
+<script src="games/fly-together.js"></script>
+<script src="games/lib/creature-kit.js"></script> <!-- shared parts for animals made in code -->
+<script src="games/lib/chameleon-model.js"></script> <!-- the chameleons' look, made in Blender (blender/) -->
+<script src="games/lib/chameleon.js"></script>    <!-- the chameleons -->
+<script src="games/lib/cat-model.js"></script>    <!-- the cat's look, made in Blender (blender/) -->
+<script src="games/lib/cat.js"></script>          <!-- the cat -->
+<script src="games/lib/climb3d.js"></script>      <!-- the 3D world for Climb Together -->
+<script src="games/climb-together.js"></script>
+<!-- The menu shows two tiles (MENU_SLOTS in js/app.js); a game for button 3 would be added here. -->
+
+
+<script>HG.start();</script>
+</body>
+</html>

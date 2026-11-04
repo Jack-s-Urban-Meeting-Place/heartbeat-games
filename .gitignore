@@ -1,0 +1,24 @@
+# Chrome's own data for the games window, and the launcher's log
+chrome-profile/
+heartbeat-log.txt
+
+# Third-party files we can't republish: download them yourself (see README.md)
+UIA.ahk
+storyboards/crow-model/references/
+storyboards/chameleon-model/references/
+storyboards/cat-model/references/
+# Concept images built from photos we don't hold the rights to (kept locally, never published)
+storyboards/**/unpublished/
+
+# Blender's automatic backups of .blend files
+*.blend1
+*.blend2
+
+# Test tools (installed with npm; not needed to run the games)
+node_modules/
+package.json
+package-lock.json
+test-output/
+
+# Comparison screenshots saved in the main folder while working (large; not part of the games)
+/*.png

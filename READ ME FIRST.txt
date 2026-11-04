@@ -1,0 +1,77 @@
+HEARTBEAT GAMES  (version 2.28.1; the version also shows in the corner of the screen)
+=================================================================================
+
+FOR THE VOLUNTEER
+  1. Turn on the laptop.
+  2. Turn on both sensors (blue side light).
+  3. Double-click "Start Heartbeat Games" on the desktop.
+  4. Wait until the screen says "All set!" (about two minutes). Meanwhile the games
+     get themselves ready in the background, so they play smoothly from the start.
+  At closing time: press Alt + F4, then switch both sensors off.
+
+INSTALLING ON A NEW LAPTOP (once)
+  1. Install Google Chrome, and AutoHotkey v2 from https://www.autohotkey.com
+  2. Copy this whole folder somewhere OneDrive doesn't sync, e.g. C:\HeartbeatGames
+  3. Get UIA.ahk, a free file from another project that the launcher needs. Either:
+       - let setup.bat download it for you (it asks, in the next step), or
+       - download it from
+           https://raw.githubusercontent.com/Descolada/UIA-v2/main/Lib/UIA.ahk
+         and put it in this folder, next to heartbeat-launcher.ahk.
+     Step-by-step help: GET-UIA.txt.
+  4. Double-click setup.bat and select Yes on the permission prompt. It creates the
+     "Start Heartbeat Games" shortcut. If you move the folder, run setup.bat again.
+
+WHAT'S IN THE FOLDER
+  heartbeat-games.html    the games page (layout and styling)
+  config.js               SETTINGS: sensor IDs, sample rate, round length
+  js\sensor.js            connecting to the sensors (proven; change rarely)
+  js\app.js               the shell: setup, menu, buttons, reconnecting, game runner
+  js\vendor\three.min.js  the 3D library (three.js r158, MIT licence; see three-LICENSE.txt)
+  games\                  one file per game (the game contract is at the top of app.js)
+                            fly-together.js (button 1: one or two players),
+                            climb-together.js (button 2: one or two players),
+                            (the menu shows just these two)
+  streamdeck\             pictures for the Stream Deck keys, and how to put them on
+  games\lib\flight.js     gameplay shared by the flying games: the valley, wings and nest start
+  games\lib\flight3d.js   the 3D world for the flying games: terrain, trees, sky, birds, nest
+  games\lib\crow.js       the crow (the birds), with a real wing skeleton; try it in tools\bird-lab.html
+  games\lib\crow-model.js the crow's look, made in Blender (blender\ holds its source; not needed to run)
+  games\lib\photo-finish.js  the end-of-round Polaroid photo
+  games\lib\glow.js       the soft glow round bright things (used by both 3D games)
+  games\lib\climb3d.js    the 3D world for Climb Together: bookshelf, window, alley, rocks, giant tree
+  games\lib\chameleon.js, cat.js, creature-kit.js   the chameleons and the cat; try them (and the crow) in tools\creature-lab.html
+  games\lib\chameleon-model.js, cat-model.js  the chameleons' and the cat's looks, made in Blender (blender\ holds their source; not needed to run)
+  games\art\              pictures the games show, e.g. Fly Together's "how to stand" picture
+  games\examples\         example games that aren't loaded, handy as templates
+  storyboards\            the whiteboard storyboard photos each game was made from (not needed to run)
+  heartbeat-launcher.ahk  opens everything and clicks through the pairing popups
+  GET-UIA.txt             where to get UIA.ahk (the launcher needs it) and where to put it
+  setup.bat / setup.ps1   one-time setup
+  tools\                  test pages and older scripts, for troubleshooting
+  README.md               the overview for anyone new to the project
+  AGENTS.md               project notes for AI assistants (and people): how it all works, decisions, quirks
+  docs\making-games\      the playbook for making new games
+  HEARTBEAT-GAMES-BUNDLE.md  everything in one file, for uploading to an AI assistant
+  heartbeat-log.txt       the launcher's log (created when it runs)
+
+CONTROLLER BUTTONS (Stream Deck sends Ctrl + Alt + Shift + key)
+  1, 2         open a game        S  start        B  back (twice during a round)
+
+STAFF SHORTCUTS
+  Ctrl + Alt + Shift + R   connect a sensor that never connected
+  Ctrl + Alt + Shift + X   closing time (same as Alt + F4 on the games)
+  Ctrl + Alt + Shift + F9  demo mode: simulated sensors, for testing without hardware
+  Sensors that drop out (a child wanders off) reconnect by themselves when they
+  come back in range; this takes about a minute because Windows pairs again.
+
+CHANGING A SENSOR
+  Edit the sensors line in config.js. Nothing else needs changing.
+
+ADDING A GAME
+  Copy a file from games\examples\, change its key, name and logic, then add a matching
+  <script src="games/..."> line near the bottom of heartbeat-games.html.
+
+BACKUPS
+  Keep this folder in a private GitHub repository (GitHub Desktop makes this
+  point-and-click), so any change can be undone. The .gitignore file already
+  leaves out Chrome's data and the log.

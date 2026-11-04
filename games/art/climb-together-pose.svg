@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="Segoe UI, system-ui, sans-serif">
+  <!--
+    Climb Together's START screen picture: two players with their hands up, palms
+    forward, reaching up one hand after the other (climbing on the spot), with a
+    sensor on one wrist. Redrawn from storyboards/climb-together/Player_actions.jpg.
+    Colours: orange = Player 1, purple = Player 2 (the players' colours on screen),
+    green = movement (as on the storyboards), dark = the sensor.
+  -->
+  <defs>
+    <marker id="tip" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4.2" markerHeight="4.2" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2fae62"/>
+    </marker>
+
+    <!-- An open hand, palm forward, centred on its palm. -->
+    <g id="hand">
+      <circle r="15" stroke="none"/>
+      <g stroke-width="7" stroke-linecap="round">
+        <line x1="-11" y1="-4" x2="-15" y2="-20"/><line x1="-4" y1="-9" x2="-5" y2="-28"/>
+        <line x1="4" y1="-9" x2="5" y2="-28"/><line x1="11" y1="-5" x2="15" y2="-20"/>
+        <line x1="-13" y1="4" x2="-25" y2="-4"/>
+      </g>
+    </g>
+    <!-- The sensor: a band round the wrist with the sensor pod on top. -->
+    <g id="sensor">
+      <rect x="-16" y="12" width="32" height="15" rx="6" fill="#2b2630" stroke="none"/>
+      <rect x="-11" y="9" width="22" height="13" rx="5" fill="#4a4452" stroke="#fff" stroke-width="2.5"/>
+      <circle cx="0" cy="15.5" r="2.4" fill="#5ec8ff" stroke="none"/>
+      <circle cx="0" cy="18" r="27" fill="none" stroke="#f2a541" stroke-width="4">
+        <animate attributeName="opacity" values="1;0.25;1" dur="1.6s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- One climber. Each arm goes shoulder → elbow → wrist; they take turns reaching up. -->
+    <g id="climber">
+      <ellipse cx="0" cy="392" rx="70" ry="10" fill="#000" stroke="none" opacity="0.08"/>
+      <line x1="-14" y1="230" x2="-26" y2="372" stroke-width="28" stroke-linecap="round"/>
+      <line x1="14" y1="230" x2="26" y2="372" stroke-width="28" stroke-linecap="round"/>
+      <rect x="-31" y="100" width="62" height="142" rx="28" stroke="none"/>
+      <circle cx="0" cy="62" r="31" stroke="none"/>
+      <!-- Left arm (on the picture): reaching up, then pulling down -->
+      <polyline fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" points="-24,116 -56,56 -52,8">
+        <animate attributeName="points" dur="1.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1"
+          keySplines=".45 0 .55 1;.45 0 .55 1" values="-24,116 -56,56 -52,8; -24,116 -74,128 -58,74; -24,116 -56,56 -52,8"/>
+      </polyline>
+      <g><use href="#hand" transform="translate(0 -10)"/>
+        <animateTransform attributeName="transform" type="translate" dur="1.4s" repeatCount="indefinite" calcMode="spline"
+          keyTimes="0;0.5;1" keySplines=".45 0 .55 1;.45 0 .55 1" values="-52 4; -58 70; -52 4"/>
+      </g>
+      <!-- Right arm: the opposite way round, with the sensor on its wrist -->
+      <polyline fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" points="24,116 74,128 58,74">
+        <animate attributeName="points" dur="1.4s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1"
+          keySplines=".45 0 .55 1;.45 0 .55 1" values="24,116 74,128 58,74; 24,116 56,56 52,8; 24,116 74,128 58,74"/>
+      </polyline>
+      <g><use href="#hand" transform="translate(0 -10)"/><use href="#sensor"/>
+        <animateTransform attributeName="transform" type="translate" dur="1.4s" repeatCount="indefinite" calcMode="spline"
+          keyTimes="0;0.5;1" keySplines=".45 0 .55 1;.45 0 .55 1" values="58 70; 52 4; 58 70"/>
+      </g>
+      <!-- Green: climbing up -->
+      <g fill="none" stroke="#2fae62" stroke-width="7" stroke-linecap="round">
+        <path d="M-118,190 L-118,30" marker-end="url(#tip)"/>
+        <path d="M118,190 L118,30" marker-end="url(#tip)"/>
+      </g>
+    </g>
+  </defs>
+
+  <g transform="translate(240 0)" fill="#e0662b" stroke="#e0662b">
+    <use href="#climber"/>
+    <text x="0" y="432" text-anchor="middle" font-size="34" font-weight="800" stroke="none">Player 1</text>
+  </g>
+  <g transform="translate(720 0)" fill="#7a4fd6" stroke="#7a4fd6">
+    <use href="#climber"/>
+    <text x="0" y="432" text-anchor="middle" font-size="34" font-weight="800" stroke="none">Player 2</text>
+  </g>
+</svg>

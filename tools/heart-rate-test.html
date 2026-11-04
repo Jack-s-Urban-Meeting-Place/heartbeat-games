@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heart rate test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap">
+<style>
+  :root {
+    --bg: #eef2f7; --ink: #1b2433; --muted: #5f6b7c; --line: #d3dae4;
+    --pulse: #c8102e; --panel: #ffffff;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141b24; --ink: #e6ebf2; --muted: #93a0b2; --line: #2a3442;
+      --pulse: #ff5a6e; --panel: #1b2430;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+  main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
+  button {
+    font: inherit; font-weight: 600; padding: .6rem 1.1rem; border-radius: 999px;
+    border: 2px solid var(--pulse); background: var(--pulse); color: #fff; cursor: pointer;
+  }
+  button.secondary { background: transparent; color: var(--pulse); }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .reading { display: flex; align-items: center; gap: 1.5rem; margin: 3rem 0 1rem; }
+  .heart { width: 4.5rem; height: 4.5rem; fill: var(--pulse); flex: none; opacity: .25; transition: opacity .3s; }
+  .heart.live { opacity: 1; animation: beat var(--beat, 1s) ease-out infinite; }
+  @keyframes beat { 0% { transform: scale(1); } 12% { transform: scale(1.18); } 30% { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .heart.live { animation: none; } }
+  .bpm { font-size: clamp(5rem, 22vw, 9rem); font-weight: 800; line-height: .9; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+  .unit { color: var(--muted); font-size: 1.1rem; }
+  #status { color: var(--muted); margin: 0 0 2rem; min-height: 1.5em; }
+  canvas { width: 100%; height: 160px; display: block; background: var(--panel); border-radius: 12px; border: 1px solid var(--line); }
+  .details { display: flex; gap: 2rem; margin-top: 1rem; color: var(--muted); font-size: .95rem; flex-wrap: wrap; }
+  .details strong { color: var(--ink); font-weight: 600; }
+  h2 { font-size: 1rem; font-weight: 600; margin: 2.5rem 0 .5rem; }
+  #log { margin: 0; padding: .75rem 1rem .75rem 2.25rem; background: var(--panel); border: 1px solid var(--line);
+         border-radius: 12px; font-size: .9rem; color: var(--muted); max-height: 16rem; overflow-y: auto; }
+  #log li.error { color: var(--pulse); font-weight: 600; }
+  .raw-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; max-height: 22rem; overflow-y: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+  th, td { text-align: left; padding: .4rem .75rem; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+  td.bytes { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .hint { color: var(--muted); font-size: .9rem; margin: 0 0 .5rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Heart rate test</h1>
+    <div>
+      <button id="connect">Connect sensor</button>
+      <button id="disconnect" class="secondary" hidden>Disconnect</button>
+    </div>
+  </header>
+
+  <div class="reading">
+    <svg class="heart" id="heart" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 3 4.5 6.6 4.5c2.1 0 3.6 1.2 4.4 2.6.8-1.4 2.3-2.6 4.4-2.6 3.6 0 5.7 3.8 4.2 7.2C19.5 16.4 12 21 12 21z"/>
+    </svg>
+    <div>
+      <div class="bpm" id="bpm" aria-live="polite">--</div>
+      <div class="unit">beats per minute</div>
+    </div>
+  </div>
+  <p id="status">Turn on your Verity Sense, then select Connect sensor.</p>
+
+  <canvas id="chart" aria-label="Heart rate over the last two minutes"></canvas>
+  <div class="details">
+    <span>Device <strong id="device">none</strong></span>
+    <span>Beat intervals <strong id="rr">not reported</strong></span>
+  </div>
+
+  <h2>Raw data from the sensor</h2>
+  <p class="hint">Newest packet first. The first byte is the flags; the next is the heart rate in hexadecimal.</p>
+  <div class="raw-wrap">
+    <table>
+      <thead><tr><th>Time</th><th>Gap</th><th>Bytes</th><th>BPM</th><th>Skin contact</th><th>Beat intervals</th></tr></thead>
+      <tbody id="raw"><tr><td colspan="6">No packets yet.</td></tr></tbody>
+    </table>
+  </div>
+
+  <h2>Connection log</h2>
+  <ol id="log"><li>Nothing yet. Select Connect sensor to start.</li></ol>
+</main>
+
+<script>
+// ---- Bluetooth: connect and subscribe ----------------------------------
+let device = null;
+const history = [];               // recent BPM values for the chart
+const MAX_POINTS = 120;           // ~2 minutes at one reading per second
+
+let connecting = false;       // true while we're still setting up (or retrying)
+let gotFirstReading = false;
+const MAX_ATTEMPTS = 3;
+
+function log(message, isError = false) {
+  const list = document.getElementById("log");
+  if (list.dataset.started !== "yes") { list.innerHTML = ""; list.dataset.started = "yes"; }
+  const item = document.createElement("li");
+  item.textContent = (performance.now() / 1000).toFixed(1) + "s  " + message;
+  if (isError) item.className = "error";
+  list.appendChild(item);
+  list.scrollTop = list.scrollHeight;
+  console.log("[heart rate]", message);
+}
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function connect() {
+  if (!navigator.bluetooth) {
+    setStatus("This browser can't use Bluetooth. Open the page in Chrome or Edge on desktop or Android.");
+    log("navigator.bluetooth is not available in this browser.", true);
+    return;
+  }
+  try {
+    setStatus("Choose your sensor in the browser's device list.");
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: ["heart_rate"] }, { namePrefix: "Polar" }],
+      optionalServices: ["heart_rate"]
+    });
+  } catch (err) {
+    // NotFoundError means the picker was closed without choosing a device.
+    setStatus(err.name === "NotFoundError"
+      ? "No sensor selected. Select Connect sensor to try again."
+      : "Couldn't open the device list: " + err.message);
+    log("Device picker: " + err.name + ": " + err.message, true);
+    return;
+  }
+
+  log("Selected " + device.name + ".");
+  device.removeEventListener("gattserverdisconnected", onDisconnected);
+  device.addEventListener("gattserverdisconnected", onDisconnected);
+
+  connecting = true;
+  let lastError = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      setStatus("Connecting to " + device.name + " (attempt " + attempt + " of " + MAX_ATTEMPTS + ")…");
+      await setUpNotifications();
+      connecting = false;
+      document.getElementById("device").textContent = device.name;
+      document.getElementById("connect").hidden = true;
+      document.getElementById("disconnect").hidden = false;
+      setStatus("Connected. Waiting for the first reading…");
+      return;
+    } catch (err) {
+      lastError = err;
+      log("Attempt " + attempt + " failed: " + err.name + ": " + err.message, true);
+      if (device.gatt.connected) device.gatt.disconnect();
+      await wait(1000 * attempt);
+    }
+  }
+  connecting = false;
+  setStatus("Connection failed after " + MAX_ATTEMPTS + " attempts: " + lastError.message);
+}
+
+async function setUpNotifications() {
+  log("Connecting to the sensor…");
+  const server = await device.gatt.connect();
+  log("Connected. Looking for the heart rate service…");
+  const service = await server.getPrimaryService("heart_rate");
+  log("Found it. Getting the heart rate measurement…");
+  const characteristic = await service.getCharacteristic("heart_rate_measurement");
+  log("Asking the sensor to start sending readings…");
+  // Assigning (rather than adding) the handler means retries never stack duplicates.
+  characteristic.oncharacteristicvaluechanged = (event) => {
+    const reading = parseHeartRate(event.target.value);
+    logRawPacket(event.target.value, reading);
+    handleReading(reading);
+  };
+  await characteristic.startNotifications();
+  log("Readings started.");
+}
+
+function disconnect() {
+  log("Disconnect selected.");
+  if (device && device.gatt.connected) device.gatt.disconnect();
+}
+
+function onDisconnected() {
+  log("The sensor's connection closed.", !connecting);
+  gotFirstReading = false;
+  if (connecting) return;      // a retry is coming, so leave the screen alone
+  document.getElementById("connect").hidden = false;
+  document.getElementById("disconnect").hidden = true;
+  document.getElementById("heart").classList.remove("live");
+  document.getElementById("bpm").textContent = "--";
+  setStatus("Sensor disconnected. Select Connect sensor to reconnect.");
+}
+
+// ---- Decoding the Heart Rate Measurement bytes -------------------------
+// Byte 0 is a set of flags describing what follows:
+//   bit 0: BPM is 16-bit (otherwise 8-bit)
+//   bit 1-2: skin contact detected / contact detection supported
+//   bit 3: energy expended field present (2 bytes, skipped here)
+//   bit 4: RR intervals present (2 bytes each, units of 1/1024 s)
+function parseHeartRate(data) {
+  const flags = data.getUint8(0);
+  const is16Bit = flags & 0x01;
+  let offset = 1;
+
+  const bpm = is16Bit ? data.getUint16(offset, true) : data.getUint8(offset);
+  offset += is16Bit ? 2 : 1;
+
+  const contactSupported = (flags & 0x04) !== 0;
+  const contact = contactSupported ? (flags & 0x02) !== 0 : null;
+
+  if (flags & 0x08) offset += 2; // skip energy expended
+
+  const rrIntervalsMs = [];
+  if (flags & 0x10) {
+    for (; offset + 1 < data.byteLength; offset += 2) {
+      rrIntervalsMs.push(Math.round(data.getUint16(offset, true) / 1024 * 1000));
+    }
+  }
+  return { bpm, contact, rrIntervalsMs, time: performance.now() };
+}
+
+// ---- Using the reading -------------------------------------------------
+function handleReading(reading) {
+  if (!gotFirstReading) {
+    gotFirstReading = true;
+    log("First reading: " + reading.bpm + " bpm.");
+  }
+  history.push(reading.bpm);
+  if (history.length > MAX_POINTS) history.shift();
+
+  document.getElementById("bpm").textContent = reading.bpm;
+  const heart = document.getElementById("heart");
+  if (reading.bpm > 0) {
+    heart.style.setProperty("--beat", (60 / reading.bpm).toFixed(3) + "s");
+    heart.classList.add("live");
+  }
+  if (reading.rrIntervalsMs.length) {
+    document.getElementById("rr").textContent = reading.rrIntervalsMs.join(", ") + " ms";
+  }
+  setStatus(reading.contact === false
+    ? "No skin contact detected. Check the sensor's fit."
+    : "Receiving live readings.");
+
+  drawChart();
+
+  // Games can listen for this:  window.addEventListener("heartrate", e => e.detail.bpm)
+  window.dispatchEvent(new CustomEvent("heartrate", { detail: reading }));
+}
+
+// ---- Raw packet view ---------------------------------------------------
+let lastPacketTime = null;
+const MAX_RAW_ROWS = 40;
+
+function logRawPacket(data, reading) {
+  const bytes = [];
+  for (let i = 0; i < data.byteLength; i++) {
+    bytes.push(data.getUint8(i).toString(16).padStart(2, "0").toUpperCase());
+  }
+  const flags = data.getUint8(0);
+  const contact = (flags & 0x04)
+    ? ((flags & 0x02) ? "yes" : "NO")
+    : "not reported";
+  const rr = (flags & 0x10) ? reading.rrIntervalsMs.join(", ") + " ms" : "not included";
+
+  const now = performance.now();
+  const gap = lastPacketTime === null ? "–" : ((now - lastPacketTime) / 1000).toFixed(2) + "s";
+  lastPacketTime = now;
+
+  const body = document.getElementById("raw");
+  if (body.dataset.started !== "yes") { body.innerHTML = ""; body.dataset.started = "yes"; }
+  const row = document.createElement("tr");
+  [(now / 1000).toFixed(1) + "s", gap, bytes.join(" "), reading.bpm, contact, rr].forEach((value, i) => {
+    const cell = document.createElement("td");
+    cell.textContent = value;
+    if (i === 2) cell.className = "bytes";
+    row.appendChild(cell);
+  });
+  body.prepend(row);
+  while (body.rows.length > MAX_RAW_ROWS) body.deleteRow(-1);
+}
+
+function setStatus(text) {
+  document.getElementById("status").textContent = text;
+}
+
+// ---- A simple rolling chart --------------------------------------------
+function drawChart() {
+  const canvas = document.getElementById("chart");
+  const ratio = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = w * ratio; canvas.height = h * ratio;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(ratio, ratio);
+  ctx.clearRect(0, 0, w, h);
+  if (history.length < 2) return;
+
+  const css = getComputedStyle(document.documentElement);
+  const min = Math.min(...history) - 5, max = Math.max(...history) + 5;
+  const x = (i) => (i / (MAX_POINTS - 1)) * w;
+  const y = (v) => h - ((v - min) / (max - min)) * (h - 24) - 12;
+
+  ctx.strokeStyle = css.getPropertyValue("--pulse");
+  ctx.lineWidth = 2.5; ctx.lineJoin = "round";
+  ctx.beginPath();
+  const start = MAX_POINTS - history.length;
+  history.forEach((v, i) => i ? ctx.lineTo(x(start + i), y(v)) : ctx.moveTo(x(start + i), y(v)));
+  ctx.stroke();
+
+  ctx.fillStyle = css.getPropertyValue("--muted");
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText(Math.round(max) + " bpm", 8, 16);
+  ctx.fillText(Math.round(min) + " bpm", 8, h - 8);
+}
+
+document.getElementById("connect").addEventListener("click", connect);
+document.getElementById("disconnect").addEventListener("click", disconnect);
+window.addEventListener("resize", drawChart);
+</script>
+</body>
+</html>

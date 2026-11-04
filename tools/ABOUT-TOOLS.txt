@@ -1,0 +1,21 @@
+TOOLS (for troubleshooting and experiments; the games don't use these)
+
+  heart-rate-test.html      one sensor, heart rate only
+  motion-test.html          one sensor, movement level and drift (normal mode)
+  motion-viewer.html        one sensor, live X/Y/Z chart and tilting cube (normal mode)
+  fast-motion.html          one sensor, fast motion mode, choice of sample rate
+  two-player-motion.html    both sensors, cubes side by side (fast motion mode)
+  bird-lab.html             no sensors: the crow model (games/lib/crow.js) on its own, from any
+                            angle, gliding, flapping, banking, landing, perched, pecking and staring
+  creature-lab.html         no sensors: the animals on their own: the chameleon (climbing, leaping,
+                            hiding, falling), the cat (standing, walking, sitting, crouching, leaping,
+                            hissing) and the crow (gliding, flapping, banking, landing, perched,
+                            pecking, staring, cawing)
+
+  polar-auto-pair.ahk       clicks the pairing popups for the test pages above
+  popup-logger.ahk          records every window that appears (for diagnosing popups)
+  popup-inspector.ahk       hover over a window and press Ctrl+Alt+Shift+I to inspect it
+  auto-allow-polar-pairing.ahk   an early version, kept for reference
+
+The .ahk tools need a copy of UIA.ahk in this folder. Quit the main launcher
+before using them, so two helpers don't click the same popups.

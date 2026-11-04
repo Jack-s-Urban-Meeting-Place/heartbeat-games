@@ -1,0 +1,44 @@
+# Heartbeat Games
+
+> Movement games for a drop-in movement studio full of kids. Players wear Polar Verity Sense optical sensors on their wrists; their movement steers games on a big screen; a Stream Deck is the controller. A web page (plain JavaScript and three.js, run straight from the folder with no server) talks to the sensors over Web Bluetooth, and an AutoHotkey launcher handles Windows' pairing popups. Code: MIT License. Art and docs: CC BY-SA 4.0. Made by Jack's Urban Meeting Place (JUMP).
+
+Start with AGENTS.md: it's the project's memory, written for AI assistants and people. To read everything at once, use HEARTBEAT-GAMES-BUNDLE.md (a generated one-file copy of all docs and source; the real files win if they differ).
+
+## Docs
+
+- [AGENTS.md](AGENTS.md): how it all works, hardware facts, decisions, quirks, glossary (start here)
+- [README.md](README.md): public overview, setup, controls, credits, licences
+- [docs/making-games/README.md](docs/making-games/README.md): the playbook for designing, building, testing and shipping a game
+- [docs/making-games/storyboards.md](docs/making-games/storyboards.md): how to read the whiteboard storyboards games are designed from
+- [docs/making-games/sensor-and-feel.md](docs/making-games/sensor-and-feel.md): what the sensor can sense, calibration, designing for a room of kids
+- [docs/making-games/testing.md](docs/making-games/testing.md): testing with simulated sensors
+- [READ ME FIRST.txt](READ%20ME%20FIRST.txt): short instructions for staff and volunteers
+
+## Code
+
+- [js/app.js](js/app.js): the shell (setup, menu, controller buttons, reconnection, game runner) and the game contract (top of file)
+- [js/sensor.js](js/sensor.js): Polar Verity Sense over Web Bluetooth, fast motion mode, accelerometer decoding
+- [games/fly-together.js](games/fly-together.js): game 1, Fly Together (one or two players, tilt to steer crows down a canyon)
+- [games/lib/flight.js](games/lib/flight.js): flying-game gameplay: valley, per-player Wings calibration, nest start
+- [games/lib/flight3d.js](games/lib/flight3d.js): the 3D world: terrain, ecosystems, river, plants, arches, sky, light and shadows, camera
+- [games/lib/glow.js](games/lib/glow.js): the soft glow round bright things and darker corners, shared by both 3D games
+- [games/lib/crow.js](games/lib/crow.js): a rigged low-poly crow built in code (glide, flap, bank, land, perch, look, peck, caw)
+- [games/lib/photo-finish.js](games/lib/photo-finish.js): end-of-round freeze → zoom → Polaroid effect
+- [games/climb-together.js](games/climb-together.js): game 2, Climb Together (one or two players climb on the spot as chameleons; freeze to hide from cats and crows)
+- [games/lib/climb3d.js](games/lib/climb3d.js): Climb Together's 3D world (bookshelf to giant tree), level data, camouflage rendering
+- [games/lib/chameleon.js](games/lib/chameleon.js), [games/lib/cat.js](games/lib/cat.js): the animals (climb, hide, walk, sit, pounce); their looks are made in Blender ([blender/build_chameleon.py](blender/build_chameleon.py), [blender/build_cat.py](blender/build_cat.py))
+- [games/lib/creature-kit.js](games/lib/creature-kit.js): shared parts for animals made in code: bendy tubes, two-bone legs, the camouflage material
+- [games/examples/game-template.js](games/examples/game-template.js): start a new game from here
+- [heartbeat-launcher.ahk](heartbeat-launcher.ahk): AutoHotkey v2 launcher; clicks Chrome's and Windows' pairing popups
+- [heartbeat-games.html](heartbeat-games.html): the page: layout, styles, script order
+- [config.js](config.js): sensor IDs and settings
+
+## Optional
+
+- [tools/try-game.mjs](tools/try-game.mjs): plays a game in a hidden browser with simulated sensors (Node.js + Playwright)
+- [tools/bird-lab.html](tools/bird-lab.html): the crow on its own, from any angle
+- [tools/creature-lab.html](tools/creature-lab.html): the chameleon and the cat on their own
+- [storyboards/climb-together/README.md](storyboards/climb-together/README.md): the storyboards behind Climb Together
+- [tools/make-ai-bundle.mjs](tools/make-ai-bundle.mjs): rebuilds HEARTBEAT-GAMES-BUNDLE.md
+- [storyboards/fly-together/README.md](storyboards/fly-together/README.md): the storyboards behind Fly Together
+- [streamdeck/README.txt](streamdeck/README.txt): Stream Deck key pictures and how to set them
