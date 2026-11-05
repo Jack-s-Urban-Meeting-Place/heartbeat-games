@@ -1,9 +1,7 @@
 # Heartbeat Games
 
-Movement games for a drop-in movement studio. Players wear a small optical sensor
-on the wrist, and their movement steers a game on a big screen. A Stream Deck is
-the controller. It's built to be started by a volunteer and played by kids: big
-visuals, few words, short rounds, and **cooperation over competition**.
+Players wear a small optical sensor on their wrists, and their movement controls games. 
+Big visuals, few words, short rounds, and **cooperation over competition**.
 
 ![Two birds flying up a desert canyon toward a stone arch](games/art/fly-together-menu.jpg)
 
@@ -11,8 +9,8 @@ visuals, few words, short rounds, and **cooperation over competition**.
 
 | Button | Game | Players | How it plays |
 |---|---|---|---|
-| 1 | **Fly Together** | 1 or 2 | Arms out like wings; tilt to steer a crow down a winding canyon. Flying close together streams hearts and speeds you up. The canyon narrows and changes as you go: Alpine → High Desert (stone arches) → Deep Desert (sheer cliffs) and round again. Each round starts in a nest, where the game learns each player's arm pose, and ends with a "photo" of the two birds. |
-| 2 | **Climb Together** | 1 or 2 | Hands up and climb on the spot to climb as a chameleon; lean the climb to steer. Push the front off your tank on a bookshelf to escape, then climb past potted plants, through an open window into an alley, up its boxes and brick wall, in through broken windows, over the roof, up a staircase of crates and big rocks, and up a giant tree, through its leaves to sit side by side at the very top, looking out over a peaceful valley. When a cat or a crow comes, **freeze**: a chameleon that holds still camouflages into the background (all but its eyes). Moving gets you caught and you slide back down; get too far ahead of your friend and you slide back to them. Climbing close together is faster, and a little stream of hearts trails behind you. |
+| 1 | **Fly Together** | 1 or 2 | Two birds leave the nest in search of a better life together! Arms out like wings; tilt to steer a bird down a winding canyon. Flying close together speeds you up. The canyon narrows and changes as you go: Alpine → High Desert → Box Canyon. Each round starts in a nest, where the game learns each player's arm pose, and ends with a "photo" of the two birds. |
+| 2 | **Climb Together** | 1 or 2 | Two chameleons escape captivity together! Hands up and climb on the spot to climb as a chameleon; lean the climb to steer. Push the front off your tank, then climb past books, potted plants, and through an open window to freedom. When a cat or a crow comes, **freeze**: a chameleon that holds still camouflages into the background. Climbing close together is faster. |
 
 ## What you need
 
@@ -24,7 +22,7 @@ visuals, few words, short rounds, and **cooperation over competition**.
 
 ## Getting started
 
-1. Copy this folder somewhere that isn't synced by OneDrive or similar, for example `C:\HeartbeatGames`.
+1. Download the zip of this repo and put it somewhere that isn't synced by OneDrive or similar, for example `C:\HeartbeatGames`.
 2. **Get `UIA.ahk`:** download it from
    <https://raw.githubusercontent.com/Descolada/UIA-v2/main/Lib/UIA.ahk> (the link downloads it straight away;
    it's the `Lib/UIA.ahk` file of the [UIA-v2 project](https://github.com/Descolada/UIA-v2)) and put it in the
@@ -70,9 +68,9 @@ Hard-won notes about the sensors and Bluetooth are in [`AGENTS.md`](AGENTS.md), 
 - **[`games/lib/climb3d.js`](games/lib/climb3d.js):** Climb Together's world, built in code from the storyboards, with a level camera that keeps two-point perspective. The room is lit by warm afternoon sun through a window (a spotlight shaped by a painted window picture), soft light bouncing from all round, and dust floating in the light; the alley is in cool shade, with evening sun across the top of its brick wall; and above, the roof and rocks are in raking afternoon sun with soft blue light from the sky; and climbing the giant tree, it turns to golden hour, ending with the sun setting over the valley, birds gliding across it and pollen drifting in the light. Soft shading where surfaces meet (floor and wall, a box on the ground, a rock stepping up from the one in front) makes things sit into each other, and a soft glow spills round the brightest things.
 - **[`games/lib/photo-finish.js`](games/lib/photo-finish.js):** the end-of-round effect that freezes the last frame, zooms in, and turns it into a Polaroid.
 
-## Making a new game
+## How we made these games
 
-Games start as **whiteboard storyboards**, photographed and colour-coded: **pink** for the world, **blue** for characters, **green** for movement, **black** for the body and on-screen text. The storyboards behind the games are in [`storyboards/fly-together/`](storyboards/fly-together/) and [`storyboards/climb-together/`](storyboards/climb-together/).
+Games start as **hand drawn whiteboard storyboards**, photographed and colour-coded: **pink** for the world, **blue** for characters, **green** for movement, **black** for the body and on-screen text. The storyboards behind the games are in [`storyboards/fly-together/`](storyboards/fly-together/) and [`storyboards/climb-together/`](storyboards/climb-together/).
 
 This project is developed with Claude Code (Anthropic's coding assistant), and the whole process is written down as a playbook in [`docs/making-games/`](docs/making-games/):
 
