@@ -22,3 +22,7 @@ test-output/
 
 # Comparison screenshots saved in the main folder while working (large; not part of the games)
 /*.png
+
+# Notes left in the Game Lab (working notes: only the folder's README is published)
+lab-notes/*
+!lab-notes/README.md

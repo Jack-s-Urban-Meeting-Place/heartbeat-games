@@ -21,7 +21,7 @@
 //   crow.caw();                 perched: caw now
 //   crow.update(dt);
 // The crow eases smoothly between whatever the controls ask for.
-// Try it in tools/bird-lab.html. Size: wingspan 1 unit (scale crow.root to taste).
+// Try it in tools/Game-Lab.html ("Crow"). Size: wingspan 1 unit (scale crow.root to taste).
 // ============================================================================
 HG.Crow = (function () {
   // ---- Tuning: how it moves ---------------------------------------------------

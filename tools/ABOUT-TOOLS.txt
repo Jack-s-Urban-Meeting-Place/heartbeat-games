@@ -5,12 +5,12 @@ TOOLS (for troubleshooting and experiments; the games don't use these)
   motion-viewer.html        one sensor, live X/Y/Z chart and tilting cube (normal mode)
   fast-motion.html          one sensor, fast motion mode, choice of sample rate
   two-player-motion.html    both sensors, cubes side by side (fast motion mode)
-  bird-lab.html             no sensors: the crow model (games/lib/crow.js) on its own, from any
-                            angle, gliding, flapping, banking, landing, perched, pecking and staring
-  creature-lab.html         no sensors: the animals on their own: the chameleon (climbing, leaping,
-                            hiding, falling), the cat (standing, walking, sitting, crouching, leaping,
-                            hissing) and the crow (gliding, flapping, banking, landing, perched,
-                            pecking, staring, cawing)
+  Game-Lab.html             no sensors: every 3D piece of the games on its own (the animals doing
+                            their actions, each part of Climb Together's climb, Fly Together's trees,
+                            rocks, nest and arch) and both whole levels. Drag to turn, scroll to zoom.
+                            Mark what should change with the 3D highlighter (paint, numbered pins,
+                            notes), then "Save for Claude" (into lab-notes\). Its parts are in game-lab\.
+                            (It replaced bird-lab.html and creature-lab.html in version 2.29.0.)
 
   polar-auto-pair.ahk       clicks the pairing popups for the test pages above
   popup-logger.ahk          records every window that appears (for diagnosing popups)

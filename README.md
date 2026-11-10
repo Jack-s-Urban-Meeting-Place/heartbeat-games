@@ -60,9 +60,9 @@ Hard-won notes about the sensors and Bluetooth are in [`AGENTS.md`](AGENTS.md), 
 
 ## Reusable pieces
 
-- **[`games/lib/crow.js`](games/lib/crow.js):** a low-poly crow with a real wing skeleton (shoulder, elbow, wrist, separate flight feathers that fan and fold). It glides, flaps, banks, flares to land and perches, steered by three simple controls. Its look is made in **Blender** ([`blender/`](blender/)): a script builds the model on the skeleton and another exports it as a plain script file the game loads, so it still runs offline from the folder. See it on its own in [`tools/bird-lab.html`](tools/bird-lab.html).
+- **[`games/lib/crow.js`](games/lib/crow.js):** a low-poly crow with a real wing skeleton (shoulder, elbow, wrist, separate flight feathers that fan and fold). It glides, flaps, banks, flares to land and perches, steered by three simple controls. Its look is made in **Blender** ([`blender/`](blender/)): a script builds the model on the skeleton and another exports it as a plain script file the game loads, so it still runs offline from the folder. See it on its own in the [Game Lab](tools/Game-Lab.html).
   It can also look at something, peck and caw (the crows in Climb Together).
-- **[`games/lib/chameleon.js`](games/lib/chameleon.js) and [`cat.js`](games/lib/cat.js):** a chameleon that climbs walls with a rocking walk, swivels each eye on its own, curls its tail and camouflages; and a cat that prowls, sits, looks around, crouches, pounces and hisses. Both are built from the parts in [`creature-kit.js`](games/lib/creature-kit.js) (bendy tubes for bodies and tails, two-bone legs that keep their feet planted, and the camouflage material). The chameleon's and the cat's looks are made in Blender like the crow's, from reference photos (see [`storyboards/chameleon-model/`](storyboards/chameleon-model/README.md) and [`storyboards/cat-model/`](storyboards/cat-model/README.md)). See them on their own in [`tools/creature-lab.html`](tools/creature-lab.html).
+- **[`games/lib/chameleon.js`](games/lib/chameleon.js) and [`cat.js`](games/lib/cat.js):** a chameleon that climbs walls with a rocking walk, swivels each eye on its own, curls its tail and camouflages; and a cat that prowls, sits, looks around, crouches, pounces and hisses. Both are built from the parts in [`creature-kit.js`](games/lib/creature-kit.js) (bendy tubes for bodies and tails, two-bone legs that keep their feet planted, and the camouflage material). The chameleon's and the cat's looks are made in Blender like the crow's, from reference photos (see [`storyboards/chameleon-model/`](storyboards/chameleon-model/README.md) and [`storyboards/cat-model/`](storyboards/cat-model/README.md)). See them on their own in the [Game Lab](tools/Game-Lab.html).
 - **[`games/lib/flight.js`](games/lib/flight.js) and [`flight3d.js`](games/lib/flight3d.js):** the winding valley, the ecosystems, the nest start with per-player calibration, and the 3D world, with real shadows (the birds', and trees' and rocks' well down the valley ahead) and a river that mirrors the sky.
 - **[`games/lib/glow.js`](games/lib/glow.js):** a soft glow round the brightest things and slightly darker corners, for any three.js scene, written to work from a plain folder (three.js's own version needs modules).
 - **[`games/lib/climb3d.js`](games/lib/climb3d.js):** Climb Together's world, built in code from the storyboards, with a level camera that keeps two-point perspective. The room is lit by warm afternoon sun through a window (a spotlight shaped by a painted window picture), soft light bouncing from all round, and dust floating in the light; the alley is in cool shade, with evening sun across the top of its brick wall; and above, the roof and rocks are in raking afternoon sun with soft blue light from the sky; and climbing the giant tree, it turns to golden hour, ending with the sun setting over the valley, birds gliding across it and pollen drifting in the light. Soft shading where surfaces meet (floor and wall, a box on the ground, a rock stepping up from the one in front) makes things sit into each other, and a soft glow spills round the brightest things.
@@ -83,6 +83,11 @@ This project is developed with Claude Code (Anthropic's coding assistant), and t
 
 The playbook is useful even without Claude: it holds the design rules, the sensor facts and the testing approach.
 
+To look closely at the 3D pieces, open the **[Game Lab](tools/Game-Lab.html)** in Chrome: every animal, every part of
+the levels and both whole levels, to turn and zoom with the mouse. Its 3D highlighter (paint, numbered pins and notes)
+saves a picture and a notes file saying exactly what should change, for whoever works on it next (see
+[`lab-notes/README.md`](lab-notes/README.md)).
+
 To try a game without sensors:
 
 ```
@@ -100,7 +105,8 @@ heartbeat-games.html    the page: layout, styling, and the list of scripts
 config.js               settings: sensor IDs, sample rate, round length
 js/                     sensor connection, the shell, and three.js
 games/                  one file per game; lib/ for shared parts; art/ for pictures; examples/ for templates
-tools/                  troubleshooting pages (sensor tests), the bird lab and the creature lab, and test scripts
+tools/                  the Game Lab (every 3D piece, to look at and mark up), troubleshooting pages (sensor tests), test scripts
+lab-notes/              notes left in the Game Lab (only its README is published)
 storyboards/            the storyboards each game was designed from
 blender/                the crow's source in Blender: build and export scripts, painted textures
 streamdeck/             Stream Deck key pictures

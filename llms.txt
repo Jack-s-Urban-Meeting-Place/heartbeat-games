@@ -36,8 +36,8 @@ Start with AGENTS.md: it's the project's memory, written for AI assistants and p
 ## Optional
 
 - [tools/try-game.mjs](tools/try-game.mjs): plays a game in a hidden browser with simulated sensors (Node.js + Playwright)
-- [tools/bird-lab.html](tools/bird-lab.html): the crow on its own, from any angle
-- [tools/creature-lab.html](tools/creature-lab.html): the chameleon and the cat on their own
+- [tools/Game-Lab.html](tools/Game-Lab.html): every 3D piece and both whole levels, to look at and mark up (notes saved to lab-notes/)
+- [lab-notes/README.md](lab-notes/README.md): how to read the notes the designer leaves in the Game Lab
 - [storyboards/climb-together/README.md](storyboards/climb-together/README.md): the storyboards behind Climb Together
 - [tools/make-ai-bundle.mjs](tools/make-ai-bundle.mjs): rebuilds HEARTBEAT-GAMES-BUNDLE.md
 - [storyboards/fly-together/README.md](storyboards/fly-together/README.md): the storyboards behind Fly Together

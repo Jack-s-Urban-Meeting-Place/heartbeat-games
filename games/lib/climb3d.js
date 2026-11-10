@@ -640,6 +640,13 @@ HG.climb3d = (function () {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z); parent.add(m); return m;
   }
+  // Runs build() and labels what it added to parent with the name of that part of the climb ("shelf", "tree"...),
+  // so tools/Game-Lab.html can show each part on its own. Anything already labelled keeps its label.
+  function tagged(parent, part, build) {
+    const before = new Set(parent.children), result = build();
+    for (const o of parent.children) if (!before.has(o) && !o.userData.part) o.userData.part = part;
+    return result;
+  }
   // A box given by its corners (x0..x1, y0..y1, z0..z1).
   const boxAt = (x0, x1, y0, y1, z0, z1, mat, parent) => box(x1 - x0, y1 - y0, z1 - z0, mat, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, parent);
   function plane(w, h, mat, x, y, z, parent) {
@@ -787,7 +794,8 @@ HG.climb3d = (function () {
   // z = 0; the group it's in moves it back and down into place): the alley ground, the brick wall, boxes,
   // pipes, broken windows, and the parapet.
   function buildOutside(g, M) {
-    const W0 = -7, W1 = 8;
+    const W0 = -7, W1 = 8, as = (part) => (build) => tagged(g, part, build);   // (each bit labelled for tools/Game-Lab.html)
+    as("alley")(() => {
     // The brick wall, with holes for the broken windows (so you see into them, and the chameleons can climb in).
     const B0 = 3.42, B1 = 6.95, WA = level.WINDOWS_AT;
     const wall = new THREE.Shape([[W0, B0], [W1, B0], [W1, B1], [W0, B1]].map(([x, y]) => new THREE.Vector2(x, y)));
@@ -796,12 +804,16 @@ HG.climb3d = (function () {
     for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getX(i) - W0) / (W1 - W0), (pos.getY(i) - B0) / (B1 - B0));   // (the picture spread as on a plain wall)
     g.add(new THREE.Mesh(wallGeo, M.brick));
     boxAt(W0, W1, 3.3, 3.46, -0.05, level.WALL_BACK - level.OUT_DZ, M.alleyGround, g);   // the alley ground, up to the room's wall
+    });
     const R = level.ROOF_AT;
+    as("roof")(() => {
     boxAt(W0, W1, R.cap, R.y, -0.25, R.front, M.concrete, g);                         // parapet cap
     boxAt(W0, W1, R.cap - 0.02, R.y, -8, -0.25, M.roof, g);                           // the flat roof behind it
+    });
     // Cardboard boxes in the alley, against the brick wall.
-    for (const k of level.BOXES_AT) { const b = boxAt(k.x0, k.x1, k.y0, k.y1, k.z0, k.z1, M.cardboard, g); b.rotation.y = k.turn; }
+    as("boxes")(() => { for (const k of level.BOXES_AT) { const b = boxAt(k.x0, k.x1, k.y0, k.y1, k.z0, k.z1, M.cardboard, g); b.rotation.y = k.turn; } });
     // Pipes: two across, one down, with elbows and brackets.
+    as("pipes")(() => {
     const P = level.PIPE_AT;
     const pipe = (from, to) => { const m = new THREE.Mesh(M.pipeGeo, M.pipe); HG.kit.limb(m, from, to, P.r); g.add(m); };
     const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -809,7 +821,9 @@ HG.climb3d = (function () {
     pipe(V(1.75, 5.4, 0.06), V(1.75, 6.88, 0.06));
     const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.045, 8, 10, Math.PI / 2), M.pipe); elbow.position.set(1.7, 5.4, 0.06); elbow.rotation.z = 0; g.add(elbow);
     for (let x = -3; x < 5; x += 0.9) for (const y of [4.75, 5.45]) if (y < 5 || x < 1.6) boxAt(x, x + 0.03, y - 0.06, y + 0.06, 0, 0.11, M.dark, g);
+    });
     // Two broken windows: dark inside, cracked and missing panes.
+    as("windows")(() => {
     for (const [x0, x1] of level.WINDOWS_AT.runs) {
       const y0 = level.WINDOWS_AT.y0, y1 = level.WINDOWS_AT.y1;
       plane(x1 - x0, y1 - y0, M.dark, (x0 + x1) / 2, (y0 + y1) / 2, -0.08, g);
@@ -828,14 +842,16 @@ HG.climb3d = (function () {
       shards.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3)); shards.computeVertexNormals();
       g.add(new THREE.Mesh(shards, M.glass));
     }
+    });
     // A chimney and a vent on the roof behind the parapet, against the sky.
-    boxAt(-1.6, -1.1, 6.98, 7.9, -1.2, -0.7, M.brick2, g);
-    boxAt(2.4, 2.75, 6.98, 7.25, -0.8, -0.45, M.pipe, g);
+    as("roof")(() => { boxAt(-1.6, -1.1, 6.98, 7.9, -1.2, -0.7, M.brick2, g); boxAt(2.4, 2.75, 6.98, 7.25, -0.8, -0.45, M.pipe, g); });
     // Wooden crates on the roof: low ones in front, tall ones (two stacked) behind.
+    as("crates")(() => {
     for (const c of level.CRATES_AT) {
       if (c.row === 0) boxAt(c.x0, c.x1, c.y0, c.y1, c.z0, c.z1, M.crate, g);
       else { const mid = (c.y0 + c.y1) / 2; boxAt(c.x0, c.x1, c.y0, mid, c.z0, c.z1, M.crate, g); boxAt(c.x0 + 0.01, c.x1 - 0.01, mid, c.y1, c.z0, c.z1, M.crate, g); }
     }
+    });
   }
 
   // A big rock: a lumpy block with rounded edges filling r.x0..x1, y0..y1, z0..z1. Its front and top stay
@@ -1279,6 +1295,7 @@ HG.climb3d = (function () {
         skyline: new THREE.MeshBasicMaterial({ map: TEX.skyline(), transparent: true, fog: false })
       };
       M.brick2.map = M.brick.map.clone(); M.brick2.map.repeat.set(1, 2); M.brick2.map.needsUpdate = true;
+      for (const [key, m] of Object.entries(M)) if (m && m.isMaterial) m.name = key;   // (so tools/Game-Lab.html can say what was marked)
       // A heart-ish leaf, a grass tuft, a flower and a pipe, used many times.
       const leafShape = new THREE.Shape(); leafShape.moveTo(0, 0); leafShape.bezierCurveTo(0.6, 0.3, 0.6, 0.9, 0, 1.2); leafShape.bezierCurveTo(-0.6, 0.9, -0.6, 0.3, 0, 0);
       M.leafGeo = new THREE.ShapeGeometry(leafShape, 4); M.stemGeo = HG.kit.limbGeometry(1, 4);
@@ -1287,14 +1304,14 @@ HG.climb3d = (function () {
 
       // ---- The climb ----
       const world = this.world = new THREE.Group(); scene.add(world);
-      buildRoom(world, M); buildShelf(world, M); buildPlants(world, M);
+      tagged(world, "room", () => buildRoom(world, M)); tagged(world, "shelf", () => buildShelf(world, M)); tagged(world, "plants", () => buildPlants(world, M));
       const outdoors = new THREE.Group(); outdoors.position.set(0, OUT_DY, OUT_DZ); world.add(outdoors);   // into the alley
-      buildOutside(outdoors, M); buildRocks(outdoors, M); buildTree(outdoors, M);
-      if (CREASES) { roomCreases(world); outdoorCreases(outdoors); }   // (soft shading where surfaces meet)
-      this.far = buildSky(world, M);
+      buildOutside(outdoors, M); tagged(outdoors, "rocks", () => buildRocks(outdoors, M)); tagged(outdoors, "tree", () => buildTree(outdoors, M));
+      if (CREASES) tagged(world, "creases", () => tagged(outdoors, "creases", () => { roomCreases(world); outdoorCreases(outdoors); }));   // (soft shading where surfaces meet)
+      this.far = tagged(world, "sky", () => buildSky(world, M));
       world.traverse((o) => { if (o.isMesh) o.receiveShadow = SHADOWS; });
-      this.valley = buildValley(scene, M); this.view = -1;
-      this.tank = buildTank(M); scene.add(this.tank.root);
+      this.valley = buildValley(scene, M); this.view = -1; this.valley.group.userData.part = "valley";
+      this.tank = buildTank(M); scene.add(this.tank.root); this.tank.root.userData.part = "tank";
       this.tank.root.traverse((o) => { if (o.isMesh) o.receiveShadow = SHADOWS; });
       // The room's light: soft light from all round, the sunbeam, and dust floating in it; and the alley's.
       this.envRoom = roomEnvironment(r); this.envAlley = alleyEnvironment(r); this.envOpen = openEnvironment(r); this.envGold = goldEnvironment(r);
@@ -1384,6 +1401,8 @@ HG.climb3d = (function () {
         cam.y + (Math.random() - 0.5) * 0.03 * shake + VALLEY_RISE * out, camZ + VALLEY_BACK * out);
       const py = this.camera.position.y;                                // looking straight ahead: level, so upright edges stay upright
       this.camera.lookAt(target.x, py - VALLEY_LOOK[0] * out, target.z - VALLEY_LOOK[1] * out);
+      // (tools/Game-Lab.html looks from its own camera, f.lookFrom = { position, target }; the light still follows cam)
+      if (f.lookFrom) { this.camera.position.copy(f.lookFrom.position); this.camera.lookAt(f.lookFrom.target); }
       this.camY = cam.y;
       this.far.position.y = cam.y - 3.8;
       // Light: the room's, the alley's or open daylight (below); the sun's shadow box follows the view.
@@ -1507,6 +1526,7 @@ HG.climb3d = (function () {
         model.update(dt);
       }
 
+      if (f.beforeDraw) f.beforeDraw(this);               // (tools/Game-Lab.html: e.g. show just one part)
       this.draw();
 
       // ---- Where things are on screen, for the words and effects drawn on top ----

@@ -1,6 +1,6 @@
 # Heartbeat Games: the whole project in one file
 
-Version 2.28.1, bundled 2026-11-04 by `tools/make-ai-bundle.mjs`.
+Version 2.29.0, bundled 2026-11-10 by `tools/make-ai-bundle.mjs`.
 This is a snapshot for AI tools and readers: if it disagrees with the real files, the real files win.
 Start with AGENTS.md (the first file below). Each file appears under a heading with its path.
 
@@ -51,8 +51,13 @@ Start with AGENTS.md (the first file below). Each file appears under a heading w
 - setup.bat
 - setup.ps1
 - tools/try-game.mjs
-- tools/bird-lab.html
-- tools/creature-lab.html
+- tools/Game-Lab.html
+- tools/game-lab/lab.js
+- tools/game-lab/catalog.js
+- tools/game-lab/stages.js
+- tools/game-lab/orbit.js
+- tools/game-lab/marks.js
+- lab-notes/README.md
 - tools/make-ai-bundle.mjs
 - tools/ABOUT-TOOLS.txt
 - .claude/skills/new-game/SKILL.md
@@ -133,7 +138,7 @@ the games full screen in Chrome; a **Stream Deck MK.2** is the controller. It mu
 be simple enough for a **volunteer** to start: turn on laptop, turn on sensors,
 double-click "Start Heartbeat Games", wait for "All set!".
 
-Current version: **2.28.1** (shown bottom-right on screen; set in `js/app.js`).
+Current version: **2.29.0** (shown bottom-right on screen; set in `js/app.js`).
 
 ## Folder layout
 
@@ -190,10 +195,12 @@ storyboards/<game>/     the designer's whiteboard storyboard photos, one folder 
                         crow-model/references/ hold photo-based or stock pictures: kept locally, never published.
 heartbeat-launcher.ahk  AutoHotkey v2: opens Chrome kiosk, connects players, clicks pairing popups
 setup.bat / setup.ps1   one-time install: Task Scheduler task (runs launcher as admin) + desktop shortcut
-tools/                  try-game.mjs (simulated-sensor test runs), make-ai-bundle.mjs, bird-lab.html (the crow
-                        on its own), creature-lab.html (the chameleon, the cat and the crow on their own),
-                        crow-skeleton.cjs (joint positions for Blender), and sensor test pages
+tools/                  Game-Lab.html (every 3D piece and both whole levels, to look at and mark up; its parts in
+                        tools/game-lab/; see "Game Lab" below), try-game.mjs (simulated-sensor test runs),
+                        make-ai-bundle.mjs, crow-skeleton.cjs (joint positions for Blender), and sensor test pages
                         and old scripts for troubleshooting
+lab-notes/              notes the designer leaves in the Game Lab (a picture + a notes file per save); only its
+                        README (how to read them) is published
 .claude/skills/new-game/  a pointer for Claude Code to docs/making-games/ (the real playbook)
 UIA.ahk                 NOT included (another project's file): Lib/UIA.ahk of the UIA-v2 project (Descolada, MIT)
                         on GitHub; known to work: 1.1.3. GET-UIA.txt says where to get it and where to put it;
@@ -596,7 +603,7 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
     → `{ along, lift }` (stays put while coiling, springs off fast and slows at the catch; `lift` = off the wall).
     Meant for gaps a climb can't cross (top of the books to an overhanging shelf edge, plant to sill, rock to rock),
     triggered automatically by the game while the players just keep climbing: used by Climb Together since
-    2.12.0 on the bookshelf (books to shelf edge) and plants (to the sill). See it in the creature lab ("leap").
+    2.12.0 on the bookshelf (books to shelf edge) and plants (to the sill). See it in the Game Lab (Chameleon, "Leap").
   - **Skeleton (since 2.9.0):** named joints in `cham.joints`: `body`, `chest` (since 2.15.0: the front half, so
     the body can bend), `head`, `eye.0/1` and `look.0/1` (the eye turrets turn with "look"), `tail.0`-`tail.15`,
     and `leg.0`-`leg.3` `.upper/.lower/.foot` (leg 0 = front left; the front legs hang from the chest). `pose()`
@@ -621,7 +628,7 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
   - **How it's made:** `node tools/chameleon-skeleton.cjs . blender/chameleon-skeleton.json` (if the skeleton
     changes), then in Blender `blender/build_chameleon.py` (shape numbers at its top; works in its own
     "Chameleon" scene, saved as `blender/chameleon.blend`), then `blender/export_chameleon.py` (writes
-    `games/lib/chameleon-model.js`, ~600 KB). Check it in `tools/creature-lab.html`. Without the model file,
+    `games/lib/chameleon-model.js`, ~600 KB). Check it in `tools/Game-Lab.html`. Without the model file,
     or with `{ model: "v1" }`, the old shapes built in code are used.
 - **`HG.Cat()`** (`games/lib/cat.js`): stands on y = 0 facing -z; 1 unit = chest to hips. Controls:
   `mode` stand/walk/sit/crouch/leap (blended), `speed`, `look` -1..1, `hiss` 0..1, `squint` 0..1.
@@ -649,12 +656,12 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
     in Blender `blender/build_cat.py` (shape and colour numbers at its top; its own "Cat" scene, saved as
     `blender/cat.blend`), then `blender/export_cat.py` (writes `games/lib/cat-model.js`, ~650 KB). Without the
     model file, or with `{ model: "v1" }`, the old shapes built in code are used.
-- Try the chameleon, the cat and (since 2.11.0) the crow in `tools/creature-lab.html`
-  (`?who=cat&action=leap&view=side&t=1&ui=0` for screenshots; add `&freeze=1` to hold still at time `t`).
+- Try the chameleon, the cat and the crow in `tools/Game-Lab.html` (`?asset=cat&action=leap&t=1&freeze=1&ui=0` for
+  screenshots; see "Game Lab" below).
 
 ## Crow model (Fly Together's birds; meant for future games too)
 
-- `games/lib/crow.js` (`new HG.Crow({ accent, style })` black with colour accents, as in the bird lab;
+- `games/lib/crow.js` (`new HG.Crow({ accent, style })` black with colour accents (the Game Lab's "Black with colour" look);
   `new HG.Crow({ colour })` solid colour, as in the games), built in code (no model files): wingspan 1 unit,
   proportions from reference photos (kept locally, see `storyboards/crow-model/README.md`): wingspan ≈ 2.2×
   body length, broad inner wing, five separated "finger" primaries, rounded fan tail, heavy beak. Rig:
@@ -664,14 +671,14 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
 - Driven by controls each frame: `crow.controls = { mode: "fly"|"land"|"perch", flap: 0..1, bank: -1..1 }`,
   then `crow.update(dt)`; it eases between them. Since 2.8.0 (for Climb Together's crows), when perched:
   `controls.look` (turn the head to an angle instead of glancing about), `controls.peck` 0..1 (stab down,
-  beak open) and `crow.caw()`; in the bird lab as "Peck" and "Stare". The wingbeat is six key poses read from a four-frame
+  beak open) and `crow.caw()`; in the Game Lab as "Peck" and "Stare". The wingbeat is six key poses read from a four-frame
   reference (the key realism: on the upstroke the wrist folds and the hand trails back). Perched idle:
   quick head turns, an occasional caw. The perched fold angles came from a numeric search that keeps
   every feather inside the body outline.
 - Look: black with a cool blue-purple gloss (strong warm highlights made it look pale from behind);
   player colour on wing leading edges and finger tips (`setStyle`: edges+tips, tips, edges, none).
-- Test it in `tools/bird-lab.html` (actions, views, speed, player colour, model v1/v2, black or solid
-  look; `?action=&view=&t=&ui=0&model=v1&look=solid` for screenshots; `lab.setCamera()` from scripts).
+- Test it in `tools/Game-Lab.html` ("Crow": actions, colour, model v1/v2, black or solid look, speed;
+  `?asset=crow&action=flap&t=1.2&freeze=1&ui=0` for screenshots; `lab.setCamera()` from scripts).
 - **Version 2 (since 2.7.0): the crow's look is made in Blender**; the skeleton and movement are unchanged.
   - **What it is:** a smooth one-piece body/neck/head (a loft, skinned to the body and head joints so
     it bends at the neck), a hooked two-part beak, inset eyes, flight feathers and two rows of covert
@@ -695,12 +702,46 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
     1. Edit the numbers at the top of `build_crow.py`, or sculpt the parts by hand in Blender
        (keep each part's `bone` property).
     2. Run `export_crow.py`.
-    3. Check it in the bird lab.
+    3. Check it in the Game Lab.
   - **If crow.js's skeleton changes:** run `node tools/crow-skeleton.cjs . blender/crow-skeleton.json`
     first, then rebuild.
   - **Blender access:** Blender is driven through the Blender MCP connector, which needs
     `UV_PYTHON=3.13`: its `pywin32` dependency has no Python 3.15 build yet.
 - Speed on the studio laptop: Fly Together runs smoothly (the designer's check, 2026-10-30).
+
+## Game Lab (since 2.29.0)
+
+`tools/Game-Lab.html`, asked for by the designer as part of "how we make games": every 3D piece on its own, both
+whole levels, and a 3D highlighter for saying what should change. It replaced `creature-lab.html` and `bird-lab.html`.
+How the designer uses it is in `docs/making-games/README.md` ("Looking at and marking up 3D pieces").
+- **Layout:** a side menu of assets in groups (Animals; Climb Together: parts; Fly Together: pieces; Whole levels),
+  the view in the middle, and a panel on the right (view buttons, the asset's actions and options, "Go to" places
+  in the whole levels, the highlighter, notes, Save for Claude).
+- **The parts** (in `tools/game-lab/`, loaded with classic script tags like the games): `orbit.js` (drag to turn, scroll
+  to zoom toward the spot under the mouse, right-drag or shift-drag to slide, double-click to look at a spot, W A S D Q E
+  and arrows; three.js's OrbitControls is a module, so this is a small one of its own), `stages.js` (where things are
+  shown), `catalog.js` (the list: one entry per asset; add new pieces there), `marks.js` (the highlighter), `lab.js`
+  (the page, and the address settings: `asset`, `action`, `t`, `freeze`, `ui=0`, `cam=x,y,z,turn,tilt,distance`,
+  `marks=0`).
+- **Three stages:** the *studio* (a plain backdrop: the animals, as in the old labs, and Fly Together's pine, bush,
+  cactus and boulders); *climb* (Climb Together's own scene, `HG.climb3d.get()`, in the game's own light for where
+  the view looks); *fly* (Fly Together's own scene with the whole 3 km canyon built, `buildRange()`). The game scenes
+  are used as they are, through small hooks added for the lab: `f.lookFrom` (the lab's camera), `f.beforeDraw`
+  (e.g. show one part), `f.keepTerrain` (Fly), and names: `tagged()` in climb3d.js labels each part of the climb
+  (`userData.part`: room, shelf, plants, alley, boxes, pipes, windows, roof, crates, rocks, tree, creases, sky; and the
+  tank and valley), and both files name their materials and Fly's shapes, so marks can say what they're on.
+  The lab's canyon is always the same one (made with a fixed seed, `CANYON_SEED` in stages.js), so notes still match.
+- **The highlighter** (`marks.js`): 🖌 Paint (round dabs laid flat on the surface, one shape drawn many times),
+  📍 Pin (numbered, always drawn on top, each with a note), 🧽 Erase; Look to move again (Esc). Animals hold still
+  while marking. Marks are kept per asset in the browser (`localStorage`), with a pink dot in the menu.
+  **Save for Claude** writes `<date>_<time>_<asset>.png` (the view with the marks) and `.json` (the notes: each pin's
+  and the paint's `on`: part, material, shape, the animal's nearest joint and action, copy number, metres down the
+  canyon and ecosystem; positions; the view; a `reopen` link) into a folder picked once (the project's `lab-notes/`,
+  remembered by the browser), or Downloads. **When the designer says they left notes:** read the newest pair in
+  `lab-notes/` (or ask where they saved them), look at the picture, follow `lab-notes/README.md`, and describe back
+  what you understood before changing anything.
+- Tested with the hidden test browser (software drawing): every asset opens without errors; painting, pins, notes and
+  saving work. Not checked on the studio laptop (it's a design tool, meant for any computer with Chrome).
 
 ## Decisions and preferences
 
@@ -819,6 +860,7 @@ were all made in October 2026. The sections above say more about each.
 
 | Version | Date | What changed |
 |---|---|---|
+| 2.29.0 | 2026-11-10 | The Game Lab (`tools/Game-Lab.html`) replaces the creature and bird labs: every 3D piece and both whole levels, a side menu, drag to turn and scroll to zoom, and a 3D highlighter (paint, numbered pins, notes) that saves a picture and a notes file for Claude into `lab-notes/`. Small hooks in climb3d.js and flight3d.js for it (named parts and materials, the lab's camera); the games themselves are unchanged. |
 | 2.28.1 | 2026-11-04 | Brought up to JUMP's project standard: code now under the MIT License (art and docs stay CC BY-SA 4.0); open-source credit footer on the setup and menu screens; one-line `CLAUDE.md`; this History; published on GitHub. Clear help for getting `UIA.ahk` (not included): `GET-UIA.txt`, the README and READ ME FIRST give the link and where to put it, `setup.bat` offers to download it, and the launcher shows a message if it's missing. |
 | 2.28.0 | 2026-10-30 | The menu shows just the two games, each half the screen, with new pictures shot from the new graphics. |
 | 2.27.0-2.27.1 | 2026-10-30 | Fly Together graphics pass: real shadows (reaching 150 m ahead since 2.27.1), ground creases and speckle, sky-coloured bounce light, the river mirroring the sky. Glow shared in `games/lib/glow.js`. |
@@ -902,9 +944,9 @@ Hard-won notes about the sensors and Bluetooth are in [`AGENTS.md`](AGENTS.md), 
 
 ## Reusable pieces
 
-- **[`games/lib/crow.js`](games/lib/crow.js):** a low-poly crow with a real wing skeleton (shoulder, elbow, wrist, separate flight feathers that fan and fold). It glides, flaps, banks, flares to land and perches, steered by three simple controls. Its look is made in **Blender** ([`blender/`](blender/)): a script builds the model on the skeleton and another exports it as a plain script file the game loads, so it still runs offline from the folder. See it on its own in [`tools/bird-lab.html`](tools/bird-lab.html).
+- **[`games/lib/crow.js`](games/lib/crow.js):** a low-poly crow with a real wing skeleton (shoulder, elbow, wrist, separate flight feathers that fan and fold). It glides, flaps, banks, flares to land and perches, steered by three simple controls. Its look is made in **Blender** ([`blender/`](blender/)): a script builds the model on the skeleton and another exports it as a plain script file the game loads, so it still runs offline from the folder. See it on its own in the [Game Lab](tools/Game-Lab.html).
   It can also look at something, peck and caw (the crows in Climb Together).
-- **[`games/lib/chameleon.js`](games/lib/chameleon.js) and [`cat.js`](games/lib/cat.js):** a chameleon that climbs walls with a rocking walk, swivels each eye on its own, curls its tail and camouflages; and a cat that prowls, sits, looks around, crouches, pounces and hisses. Both are built from the parts in [`creature-kit.js`](games/lib/creature-kit.js) (bendy tubes for bodies and tails, two-bone legs that keep their feet planted, and the camouflage material). The chameleon's and the cat's looks are made in Blender like the crow's, from reference photos (see [`storyboards/chameleon-model/`](storyboards/chameleon-model/README.md) and [`storyboards/cat-model/`](storyboards/cat-model/README.md)). See them on their own in [`tools/creature-lab.html`](tools/creature-lab.html).
+- **[`games/lib/chameleon.js`](games/lib/chameleon.js) and [`cat.js`](games/lib/cat.js):** a chameleon that climbs walls with a rocking walk, swivels each eye on its own, curls its tail and camouflages; and a cat that prowls, sits, looks around, crouches, pounces and hisses. Both are built from the parts in [`creature-kit.js`](games/lib/creature-kit.js) (bendy tubes for bodies and tails, two-bone legs that keep their feet planted, and the camouflage material). The chameleon's and the cat's looks are made in Blender like the crow's, from reference photos (see [`storyboards/chameleon-model/`](storyboards/chameleon-model/README.md) and [`storyboards/cat-model/`](storyboards/cat-model/README.md)). See them on their own in the [Game Lab](tools/Game-Lab.html).
 - **[`games/lib/flight.js`](games/lib/flight.js) and [`flight3d.js`](games/lib/flight3d.js):** the winding valley, the ecosystems, the nest start with per-player calibration, and the 3D world, with real shadows (the birds', and trees' and rocks' well down the valley ahead) and a river that mirrors the sky.
 - **[`games/lib/glow.js`](games/lib/glow.js):** a soft glow round the brightest things and slightly darker corners, for any three.js scene, written to work from a plain folder (three.js's own version needs modules).
 - **[`games/lib/climb3d.js`](games/lib/climb3d.js):** Climb Together's world, built in code from the storyboards, with a level camera that keeps two-point perspective. The room is lit by warm afternoon sun through a window (a spotlight shaped by a painted window picture), soft light bouncing from all round, and dust floating in the light; the alley is in cool shade, with evening sun across the top of its brick wall; and above, the roof and rocks are in raking afternoon sun with soft blue light from the sky; and climbing the giant tree, it turns to golden hour, ending with the sun setting over the valley, birds gliding across it and pollen drifting in the light. Soft shading where surfaces meet (floor and wall, a box on the ground, a rock stepping up from the one in front) makes things sit into each other, and a soft glow spills round the brightest things.
@@ -925,6 +967,11 @@ This project is developed with Claude Code (Anthropic's coding assistant), and t
 
 The playbook is useful even without Claude: it holds the design rules, the sensor facts and the testing approach.
 
+To look closely at the 3D pieces, open the **[Game Lab](tools/Game-Lab.html)** in Chrome: every animal, every part of
+the levels and both whole levels, to turn and zoom with the mouse. Its 3D highlighter (paint, numbered pins and notes)
+saves a picture and a notes file saying exactly what should change, for whoever works on it next (see
+[`lab-notes/README.md`](lab-notes/README.md)).
+
 To try a game without sensors:
 
 ```
@@ -942,7 +989,8 @@ heartbeat-games.html    the page: layout, styling, and the list of scripts
 config.js               settings: sensor IDs, sample rate, round length
 js/                     sensor connection, the shell, and three.js
 games/                  one file per game; lib/ for shared parts; art/ for pictures; examples/ for templates
-tools/                  troubleshooting pages (sensor tests), the bird lab and the creature lab, and test scripts
+tools/                  the Game Lab (every 3D piece, to look at and mark up), troubleshooting pages (sensor tests), test scripts
+lab-notes/              notes left in the Game Lab (only its README is published)
 storyboards/            the storyboards each game was designed from
 blender/                the crow's source in Blender: build and export scripts, painted textures
 streamdeck/             Stream Deck key pictures
@@ -994,7 +1042,7 @@ Bricolage Grotesque (SIL Open Font Licence) and UIA-v2 (downloaded separately; s
 ## File: READ ME FIRST.txt
 
 ```text
-HEARTBEAT GAMES  (version 2.28.1; the version also shows in the corner of the screen)
+HEARTBEAT GAMES  (version 2.29.0; the version also shows in the corner of the screen)
 =================================================================================
 
 FOR THE VOLUNTEER
@@ -1030,12 +1078,12 @@ WHAT'S IN THE FOLDER
   streamdeck\             pictures for the Stream Deck keys, and how to put them on
   games\lib\flight.js     gameplay shared by the flying games: the valley, wings and nest start
   games\lib\flight3d.js   the 3D world for the flying games: terrain, trees, sky, birds, nest
-  games\lib\crow.js       the crow (the birds), with a real wing skeleton; try it in tools\bird-lab.html
+  games\lib\crow.js       the crow (the birds), with a real wing skeleton; try it in tools\Game-Lab.html
   games\lib\crow-model.js the crow's look, made in Blender (blender\ holds its source; not needed to run)
   games\lib\photo-finish.js  the end-of-round Polaroid photo
   games\lib\glow.js       the soft glow round bright things (used by both 3D games)
   games\lib\climb3d.js    the 3D world for Climb Together: bookshelf, window, alley, rocks, giant tree
-  games\lib\chameleon.js, cat.js, creature-kit.js   the chameleons and the cat; try them (and the crow) in tools\creature-lab.html
+  games\lib\chameleon.js, cat.js, creature-kit.js   the chameleons and the cat; try them in tools\Game-Lab.html
   games\lib\chameleon-model.js, cat-model.js  the chameleons' and the cat's looks, made in Blender (blender\ holds their source; not needed to run)
   games\art\              pictures the games show, e.g. Fly Together's "how to stand" picture
   games\examples\         example games that aren't loaded, handy as templates
@@ -1116,8 +1164,8 @@ Start with AGENTS.md: it's the project's memory, written for AI assistants and p
 ## Optional
 
 - [tools/try-game.mjs](tools/try-game.mjs): plays a game in a hidden browser with simulated sensors (Node.js + Playwright)
-- [tools/bird-lab.html](tools/bird-lab.html): the crow on its own, from any angle
-- [tools/creature-lab.html](tools/creature-lab.html): the chameleon and the cat on their own
+- [tools/Game-Lab.html](tools/Game-Lab.html): every 3D piece and both whole levels, to look at and mark up (notes saved to lab-notes/)
+- [lab-notes/README.md](lab-notes/README.md): how to read the notes the designer leaves in the Game Lab
 - [storyboards/climb-together/README.md](storyboards/climb-together/README.md): the storyboards behind Climb Together
 - [tools/make-ai-bundle.mjs](tools/make-ai-bundle.mjs): rebuilds HEARTBEAT-GAMES-BUNDLE.md
 - [storyboards/fly-together/README.md](storyboards/fly-together/README.md): the storyboards behind Fly Together
@@ -1202,7 +1250,7 @@ won't work well, say so and suggest the closest thing that will.
   `Launch` nest start, solo detection) and `games/lib/flight3d.js` (the 3D world).
   Other 3D games can reuse three.js (`js/vendor/three.min.js`, loaded as a global
   `THREE`; r158; no ES modules because the page runs from `file:///`).
-  Birds: reuse the crow in `games/lib/crow.js` (try it in `tools/bird-lab.html`).
+  Birds: reuse the crow in `games/lib/crow.js` (try it in `tools/Game-Lab.html`).
 - Save the storyboard photos in `storyboards/<game-name>/`, named by panel, with a short
   `README.md` saying what each became (see `storyboards/fly-together/`). Concepts made from
   photos we don't own go in `storyboards/<game-name>/unpublished/`, which is never published.
@@ -1222,6 +1270,10 @@ won't work well, say so and suggest the closest thing that will.
 - Keep everything offline-safe: no new downloads at runtime. If a library is truly
   needed, save it in `js/vendor/` with its licence, and only if its licence is
   compatible with MIT (code) / CC BY-SA 4.0 (art).
+
+- **Add each new 3D piece to the Game Lab** (`tools/game-lab/catalog.js`: one entry each; parts of a level
+  built in code can be labelled with `tagged()`, as in `games/lib/climb3d.js`), so the designer can look at it
+  on its own, turn it, zoom in and mark it up. See "Looking at and marking up 3D pieces" below.
 
 ### 5. Test it with simulated sensors
 
@@ -1252,6 +1304,25 @@ timeline, prints what happens and saves screenshots. Always:
   which tuning numbers they're most likely to want to adjust.
 - Things only the real setup can confirm (Bluetooth, the launcher, 3D speed on the
   studio laptop, how kids actually move): say so, and ask them to report back.
+
+## Looking at and marking up 3D pieces: the Game Lab
+
+[`tools/Game-Lab.html`](../../tools/Game-Lab.html) (open it in Chrome, straight from the folder) shows every 3D
+piece of the games on its own, and both whole levels, so the designer can look closely and say what should change:
+
+1. **Pick something** in the menu on the left: an animal (with its actions: climb, leap, hiss, flap...), a part of
+   a level (the bookshelf, the giant tree, the stone arch...), or a whole level (with "Go to" buttons for each place).
+2. **Look around:** drag to turn, scroll to zoom (toward the spot under the mouse), right-drag to slide, double-click
+   to look at a spot. The Front / Side / Back / Top buttons and "Start view" put the view back.
+3. **Mark it up:** 🖌 Paint over an area, 📍 Pin an exact spot (each pin has its own note), 🧽 Erase. Write what should
+   change in the notes. Animals hold still while you mark them. Marks are kept per piece (a pink dot in the menu).
+4. **Save for Claude:** a picture of the view with the marks, and a notes file, go into `lab-notes/` (the first save
+   asks for the folder: pick the project's `lab-notes` folder) or into Downloads. Then tell Claude "I left notes".
+
+For whoever acts on the notes: [`lab-notes/README.md`](../../lab-notes/README.md) says how to read them. Each mark says
+what it's on (the level part, its material, the animal's joint, how far down the canyon) and exactly where in 3D, and
+`reopen` opens the same view. Describe back what you understood from the marks before changing anything, as with a
+storyboard.
 
 ## Look and feel
 
@@ -1964,7 +2035,7 @@ window.HG_CONFIG = {
 // games through the game contract below. Games live in the games/ folder.
 // ============================================================================
 
-const VERSION = "2.28.1";
+const VERSION = "2.29.0";
 const CONFIG = Object.assign({ sensors: { 1: "", 2: "" }, sampleRate: 416, roundSeconds: 30 }, window.HG_CONFIG || {});
 
 // ============================================================================
@@ -3937,6 +4008,9 @@ HG.flight3d = (function () {
     const boulderGeo = roughen(new THREE.DodecahedronGeometry(1, 1), 0.45, 9);
     const cactusGeo = cactusShape();
     const archMat = new THREE.MeshStandardMaterial({ color: 0xc28b5f, roughness: 1, flatShading: true });
+    // (named, so tools/Game-Lab.html can say what was marked)
+    groundMat.name = "ground"; riverMat.name = "river"; trunkMat.name = "trunk"; plainMat.name = "plants and rocks"; archMat.name = "arch";
+    trunkGeo.name = "pine trunk"; crownGeo.name = "pine tree"; bushGeo.name = "bush"; boulderGeo.name = "boulder"; cactusGeo.name = "cactus";
     return { groundMat, riverMat, trunkGeo, crownGeo, trunkMat, crownMat: plainMat, plainMat, bushGeo, boulderGeo, cactusGeo, archMat };
   }
 
@@ -4354,6 +4428,16 @@ HG.flight3d = (function () {
       }
     }
 
+    // Build every 60 m section of valley from z0 to z1 metres at once (for tools/Game-Lab.html, which shows the
+    // whole canyon; a round only keeps the stretch round the birds, in updateTerrain).
+    buildRange(z0, z1) {
+      for (let i = Math.floor(z0 / CHUNK); i < Math.ceil(z1 / CHUNK); i++) {
+        if (this.chunks.has(i)) continue;
+        const group = new THREE.Group(), parts = buildChunk(this.world, i, group);
+        this.terrain.add(group); this.chunks.set(i, { group, parts });
+      }
+    }
+
     // How far the camera can zoom in while keeping things within `reach` metres of centre on screen.
     fitZoom(reach, aspect) {
       return BIRD_AHEAD * Math.tan(FOV / 2 * Math.PI / 180) * aspect * 0.72 / Math.max(reach, 0.5);
@@ -4369,7 +4453,7 @@ HG.flight3d = (function () {
       const size = this.renderer.getSize(new THREE.Vector2());
       if (size.x !== w || size.y !== h) { this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
       const world = this.world, birdZ = f.z + BIRD_AHEAD;
-      this.updateTerrain(f.z);
+      if (!f.keepTerrain) this.updateTerrain(f.z);      // (tools/Game-Lab.html builds the whole canyon itself: buildRange)
 
       // ---- Camera: close-up on the nest, pulling back, then following the birds ----
       const zoom = f.zoom || 1, back = BIRD_AHEAD / zoom;
@@ -4393,6 +4477,8 @@ HG.flight3d = (function () {
       this.camera.up.set(0, 1, 0);
       this.camera.lookAt(target[0], target[1], -target[2]);
       if (f.roll) this.camera.rotateZ(-f.roll);           // the whole view banks when players lean together
+      // (tools/Game-Lab.html looks from its own camera: f.lookFrom = { position, target })
+      if (f.lookFrom) { this.camera.position.copy(f.lookFrom.position); this.camera.lookAt(f.lookFrom.target); }
 
       // Sky, haze, distant ranges and sunlight shift colour with the ecosystem just ahead.
       this.blendSky(f.z + 150);
@@ -4442,8 +4528,10 @@ HG.flight3d = (function () {
         const shown = f.birds.filter((b) => !b.hidden), mid = shown.length ? shown.reduce((t, b) => t + b.x, 0) / shown.length : f.camX;
         const from = f.view.inNest ? this.nest.seats[0][0] : mid, z = f.view.inNest ? BIRD_AHEAD : birdZ;
         this.sun.target.position.set((from + world.centre(z + SHADOW_AHEAD * 0.6)) / 2, 0, -z);
+        if (f.lookFrom) this.sun.target.position.set(f.lookFrom.target.x, 0, f.lookFrom.target.z + SHADOW_AHEAD * 0.4);   // (shadows round where the lab looks)
         this.sun.position.copy(this.sun.target.position).addScaledVector(this.sunFrom, 200);
       }
+      if (f.beforeDraw) f.beforeDraw(this);               // (tools/Game-Lab.html: e.g. show just one part)
       this.draw();
     }
 
@@ -4517,7 +4605,9 @@ HG.flight3d = (function () {
     BIRD_HEIGHT,
     // The shared scene, created the first time it's needed.
     get, warmUp,
-    groundAt
+    groundAt,
+    // For tools/Game-Lab.html: the shared shapes and materials, the nest, the arches, and which ecosystem is where.
+    parts() { shared = shared || makeShared(); return { shared, makeNest, buildArch, archesBetween, zoneWeights, CHUNK, ZONE_LENGTH, NEST_HEIGHT }; }
   };
 })();
 ```
@@ -4550,7 +4640,7 @@ HG.flight3d = (function () {
 //   crow.caw();                 perched: caw now
 //   crow.update(dt);
 // The crow eases smoothly between whatever the controls ask for.
-// Try it in tools/bird-lab.html. Size: wingspan 1 unit (scale crow.root to taste).
+// Try it in tools/Game-Lab.html ("Crow"). Size: wingspan 1 unit (scale crow.root to taste).
 // ============================================================================
 HG.Crow = (function () {
   // ---- Tuning: how it moves ---------------------------------------------------
@@ -6769,6 +6859,13 @@ HG.climb3d = (function () {
     const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     m.position.set(x, y, z); parent.add(m); return m;
   }
+  // Runs build() and labels what it added to parent with the name of that part of the climb ("shelf", "tree"...),
+  // so tools/Game-Lab.html can show each part on its own. Anything already labelled keeps its label.
+  function tagged(parent, part, build) {
+    const before = new Set(parent.children), result = build();
+    for (const o of parent.children) if (!before.has(o) && !o.userData.part) o.userData.part = part;
+    return result;
+  }
   // A box given by its corners (x0..x1, y0..y1, z0..z1).
   const boxAt = (x0, x1, y0, y1, z0, z1, mat, parent) => box(x1 - x0, y1 - y0, z1 - z0, mat, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, parent);
   function plane(w, h, mat, x, y, z, parent) {
@@ -6916,7 +7013,8 @@ HG.climb3d = (function () {
   // z = 0; the group it's in moves it back and down into place): the alley ground, the brick wall, boxes,
   // pipes, broken windows, and the parapet.
   function buildOutside(g, M) {
-    const W0 = -7, W1 = 8;
+    const W0 = -7, W1 = 8, as = (part) => (build) => tagged(g, part, build);   // (each bit labelled for tools/Game-Lab.html)
+    as("alley")(() => {
     // The brick wall, with holes for the broken windows (so you see into them, and the chameleons can climb in).
     const B0 = 3.42, B1 = 6.95, WA = level.WINDOWS_AT;
     const wall = new THREE.Shape([[W0, B0], [W1, B0], [W1, B1], [W0, B1]].map(([x, y]) => new THREE.Vector2(x, y)));
@@ -6925,12 +7023,16 @@ HG.climb3d = (function () {
     for (let i = 0; i < uv.count; i++) uv.setXY(i, (pos.getX(i) - W0) / (W1 - W0), (pos.getY(i) - B0) / (B1 - B0));   // (the picture spread as on a plain wall)
     g.add(new THREE.Mesh(wallGeo, M.brick));
     boxAt(W0, W1, 3.3, 3.46, -0.05, level.WALL_BACK - level.OUT_DZ, M.alleyGround, g);   // the alley ground, up to the room's wall
+    });
     const R = level.ROOF_AT;
+    as("roof")(() => {
     boxAt(W0, W1, R.cap, R.y, -0.25, R.front, M.concrete, g);                         // parapet cap
     boxAt(W0, W1, R.cap - 0.02, R.y, -8, -0.25, M.roof, g);                           // the flat roof behind it
+    });
     // Cardboard boxes in the alley, against the brick wall.
-    for (const k of level.BOXES_AT) { const b = boxAt(k.x0, k.x1, k.y0, k.y1, k.z0, k.z1, M.cardboard, g); b.rotation.y = k.turn; }
+    as("boxes")(() => { for (const k of level.BOXES_AT) { const b = boxAt(k.x0, k.x1, k.y0, k.y1, k.z0, k.z1, M.cardboard, g); b.rotation.y = k.turn; } });
     // Pipes: two across, one down, with elbows and brackets.
+    as("pipes")(() => {
     const P = level.PIPE_AT;
     const pipe = (from, to) => { const m = new THREE.Mesh(M.pipeGeo, M.pipe); HG.kit.limb(m, from, to, P.r); g.add(m); };
     const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -6938,7 +7040,9 @@ HG.climb3d = (function () {
     pipe(V(1.75, 5.4, 0.06), V(1.75, 6.88, 0.06));
     const elbow = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.045, 8, 10, Math.PI / 2), M.pipe); elbow.position.set(1.7, 5.4, 0.06); elbow.rotation.z = 0; g.add(elbow);
     for (let x = -3; x < 5; x += 0.9) for (const y of [4.75, 5.45]) if (y < 5 || x < 1.6) boxAt(x, x + 0.03, y - 0.06, y + 0.06, 0, 0.11, M.dark, g);
+    });
     // Two broken windows: dark inside, cracked and missing panes.
+    as("windows")(() => {
     for (const [x0, x1] of level.WINDOWS_AT.runs) {
       const y0 = level.WINDOWS_AT.y0, y1 = level.WINDOWS_AT.y1;
       plane(x1 - x0, y1 - y0, M.dark, (x0 + x1) / 2, (y0 + y1) / 2, -0.08, g);
@@ -6957,14 +7061,16 @@ HG.climb3d = (function () {
       shards.setAttribute("position", new THREE.Float32BufferAttribute(pts, 3)); shards.computeVertexNormals();
       g.add(new THREE.Mesh(shards, M.glass));
     }
+    });
     // A chimney and a vent on the roof behind the parapet, against the sky.
-    boxAt(-1.6, -1.1, 6.98, 7.9, -1.2, -0.7, M.brick2, g);
-    boxAt(2.4, 2.75, 6.98, 7.25, -0.8, -0.45, M.pipe, g);
+    as("roof")(() => { boxAt(-1.6, -1.1, 6.98, 7.9, -1.2, -0.7, M.brick2, g); boxAt(2.4, 2.75, 6.98, 7.25, -0.8, -0.45, M.pipe, g); });
     // Wooden crates on the roof: low ones in front, tall ones (two stacked) behind.
+    as("crates")(() => {
     for (const c of level.CRATES_AT) {
       if (c.row === 0) boxAt(c.x0, c.x1, c.y0, c.y1, c.z0, c.z1, M.crate, g);
       else { const mid = (c.y0 + c.y1) / 2; boxAt(c.x0, c.x1, c.y0, mid, c.z0, c.z1, M.crate, g); boxAt(c.x0 + 0.01, c.x1 - 0.01, mid, c.y1, c.z0, c.z1, M.crate, g); }
     }
+    });
   }
 
   // A big rock: a lumpy block with rounded edges filling r.x0..x1, y0..y1, z0..z1. Its front and top stay
@@ -7408,6 +7514,7 @@ HG.climb3d = (function () {
         skyline: new THREE.MeshBasicMaterial({ map: TEX.skyline(), transparent: true, fog: false })
       };
       M.brick2.map = M.brick.map.clone(); M.brick2.map.repeat.set(1, 2); M.brick2.map.needsUpdate = true;
+      for (const [key, m] of Object.entries(M)) if (m && m.isMaterial) m.name = key;   // (so tools/Game-Lab.html can say what was marked)
       // A heart-ish leaf, a grass tuft, a flower and a pipe, used many times.
       const leafShape = new THREE.Shape(); leafShape.moveTo(0, 0); leafShape.bezierCurveTo(0.6, 0.3, 0.6, 0.9, 0, 1.2); leafShape.bezierCurveTo(-0.6, 0.9, -0.6, 0.3, 0, 0);
       M.leafGeo = new THREE.ShapeGeometry(leafShape, 4); M.stemGeo = HG.kit.limbGeometry(1, 4);
@@ -7416,14 +7523,14 @@ HG.climb3d = (function () {
 
       // ---- The climb ----
       const world = this.world = new THREE.Group(); scene.add(world);
-      buildRoom(world, M); buildShelf(world, M); buildPlants(world, M);
+      tagged(world, "room", () => buildRoom(world, M)); tagged(world, "shelf", () => buildShelf(world, M)); tagged(world, "plants", () => buildPlants(world, M));
       const outdoors = new THREE.Group(); outdoors.position.set(0, OUT_DY, OUT_DZ); world.add(outdoors);   // into the alley
-      buildOutside(outdoors, M); buildRocks(outdoors, M); buildTree(outdoors, M);
-      if (CREASES) { roomCreases(world); outdoorCreases(outdoors); }   // (soft shading where surfaces meet)
-      this.far = buildSky(world, M);
+      buildOutside(outdoors, M); tagged(outdoors, "rocks", () => buildRocks(outdoors, M)); tagged(outdoors, "tree", () => buildTree(outdoors, M));
+      if (CREASES) tagged(world, "creases", () => tagged(outdoors, "creases", () => { roomCreases(world); outdoorCreases(outdoors); }));   // (soft shading where surfaces meet)
+      this.far = tagged(world, "sky", () => buildSky(world, M));
       world.traverse((o) => { if (o.isMesh) o.receiveShadow = SHADOWS; });
-      this.valley = buildValley(scene, M); this.view = -1;
-      this.tank = buildTank(M); scene.add(this.tank.root);
+      this.valley = buildValley(scene, M); this.view = -1; this.valley.group.userData.part = "valley";
+      this.tank = buildTank(M); scene.add(this.tank.root); this.tank.root.userData.part = "tank";
       this.tank.root.traverse((o) => { if (o.isMesh) o.receiveShadow = SHADOWS; });
       // The room's light: soft light from all round, the sunbeam, and dust floating in it; and the alley's.
       this.envRoom = roomEnvironment(r); this.envAlley = alleyEnvironment(r); this.envOpen = openEnvironment(r); this.envGold = goldEnvironment(r);
@@ -7513,6 +7620,8 @@ HG.climb3d = (function () {
         cam.y + (Math.random() - 0.5) * 0.03 * shake + VALLEY_RISE * out, camZ + VALLEY_BACK * out);
       const py = this.camera.position.y;                                // looking straight ahead: level, so upright edges stay upright
       this.camera.lookAt(target.x, py - VALLEY_LOOK[0] * out, target.z - VALLEY_LOOK[1] * out);
+      // (tools/Game-Lab.html looks from its own camera, f.lookFrom = { position, target }; the light still follows cam)
+      if (f.lookFrom) { this.camera.position.copy(f.lookFrom.position); this.camera.lookAt(f.lookFrom.target); }
       this.camY = cam.y;
       this.far.position.y = cam.y - 3.8;
       // Light: the room's, the alley's or open daylight (below); the sun's shadow box follows the view.
@@ -7636,6 +7745,7 @@ HG.climb3d = (function () {
         model.update(dt);
       }
 
+      if (f.beforeDraw) f.beforeDraw(this);               // (tools/Game-Lab.html: e.g. show just one part)
       this.draw();
 
       // ---- Where things are on screen, for the words and effects drawn on top ----
@@ -11769,431 +11879,1179 @@ await browser.close();
 
 ---
 
-## File: tools/bird-lab.html
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bird Lab</title>
-<!--
-  Bird lab: try out the crow (games/lib/crow.js) on its own, from any angle,
-  doing each of its actions, before it goes into a game.
-  Open this file in Chrome. Drag to turn the view, scroll to zoom.
-  For screenshots, settings can go in the address: ?action=flap&view=game&t=1.2&ui=0
-    action  glide, flap, bankL, bankR, land, perch, peck, stare, tour
-    view    game, behind, side, front, top, three
-    t       jump to this many seconds in, then pause      speed  0.25 to 1
-    player  1 or 2 (the accent colour)                     style  edges+tips, tips, edges, none
-    ui      0 hides the controls
--->
-<style>
-  :root { --bg: #f3efe8; --ink: #1f1a24; --muted: #6c6472; --panel: rgba(255,255,255,.92); --p1: #e0662b; --p2: #7a4fd6; }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body { background: #cfe3f2; color: var(--ink); font-family: "Segoe UI", system-ui, sans-serif; overflow: hidden; }
-  canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
-  canvas:active { cursor: grabbing; }
-  .panel { position: fixed; left: 16px; top: 16px; width: 250px; max-height: calc(100% - 32px); overflow: auto;
-           background: var(--panel); border-radius: 16px; padding: 14px 16px; box-shadow: 0 8px 30px rgba(0,0,0,.12); }
-  .panel h1 { font-size: 1.15rem; margin: 0 0 2px; }
-  .panel p { margin: 0 0 10px; color: var(--muted); font-size: .82rem; }
-  .panel h2 { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 12px 0 6px; }
-  .row { display: flex; flex-wrap: wrap; gap: 6px; }
-  button { font: inherit; font-size: .85rem; border: 2px solid #d9d2c7; background: #fff; color: var(--ink); border-radius: 999px;
-           padding: 5px 11px; cursor: pointer; }
-  button:hover { border-color: #a99f93; }
-  button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
-  button kbd { font: inherit; opacity: .55; margin-left: 4px; }
-  select { font: inherit; font-size: .85rem; padding: 4px 8px; border-radius: 10px; border: 2px solid #d9d2c7; width: 100%; }
-  .status { position: fixed; right: 16px; bottom: 14px; font-size: .85rem; color: var(--ink); background: var(--panel);
-            border-radius: 999px; padding: 6px 14px; }
-  .hidden { display: none; }
-</style>
-</head>
-<body>
-<div class="panel" id="panel">
-  <h1>Bird lab: crow</h1>
-  <p>Drag to turn the view · scroll to zoom</p>
-  <h2>Action</h2>
-  <div class="row" id="actions"></div>
-  <h2>View</h2>
-  <div class="row" id="views"></div>
-  <h2>Speed</h2>
-  <div class="row" id="speeds"></div>
-  <h2>Player colour</h2>
-  <div class="row" id="players"></div>
-  <h2>Model</h2>
-  <div class="row" id="models"></div>
-  <h2>Look</h2>
-  <div class="row" id="looks"></div>
-  <h2>Colour on (black crow)</h2>
-  <select id="style">
-    <option value="edges+tips">Wing edges and finger tips</option>
-    <option value="tips">Finger tips only</option>
-    <option value="edges">Wing edges only</option>
-    <option value="none">None (all black)</option>
-  </select>
-</div>
-<div class="status" id="status"></div>
-
-<script src="../js/vendor/three.min.js"></script>
-<script>const HG = {};</script>
-<script src="../games/lib/crow-model.js"></script>   <!-- version 2's skin, made in Blender -->
-<script src="../games/lib/crow.js"></script>
-<script>
-// ---- Settings from the address bar ----
-const params = new URLSearchParams(location.search);
-const ACTIONS = {
-  glide: { label: "Glide", key: "1", controls: { mode: "fly", flap: 0, bank: 0, peck: 0, look: null } },
-  flap: { label: "Flap", key: "2", controls: { mode: "fly", flap: 1, bank: 0, peck: 0, look: null } },
-  bankL: { label: "Bank left", key: "3", controls: { mode: "fly", flap: 0, bank: -1, peck: 0, look: null } },
-  bankR: { label: "Bank right", key: "4", controls: { mode: "fly", flap: 0, bank: 1, peck: 0, look: null } },
-  land: { label: "Landing flare", key: "5", controls: { mode: "land", flap: 0, bank: 0, peck: 0, look: null } },
-  perch: { label: "Perched", key: "6", controls: { mode: "perch", flap: 0, bank: 0, peck: 0, look: null } },
-  peck: { label: "Peck", key: "8", controls: { mode: "perch", flap: 0, bank: 0, peck: 1, look: null } },
-  stare: { label: "Stare", key: "9", controls: { mode: "perch", flap: 0, bank: 0, peck: 0, look: 0.9 } },
-  tour: { label: "Tour", key: "7" }
-};
-// Camera views: [angle around (0 = from behind), height angle, distance]
-const VIEWS = {
-  game: { label: "Game view", sph: [0, 0.62, 1.9] },
-  behind: { label: "Behind", sph: [0, 0.12, 1.6] },
-  side: { label: "Side", sph: [Math.PI / 2, 0.08, 1.5] },
-  front: { label: "Front", sph: [Math.PI, 0.1, 1.5] },
-  top: { label: "Top", sph: [0, 1.5, 1.7] },
-  three: { label: "¾", sph: [0.75, 0.4, 1.6] }
-};
-const TOUR = ["flap", "glide", "bankL", "bankR", "flap", "land", "perch", "perch", "flap"];
-const PLAYERS = { 1: "#e0662b", 2: "#7a4fd6" };
-
-// ---- The scene ----
-const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
-document.body.prepend(renderer.domElement);
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xd8e6f0);
-scene.fog = new THREE.Fog(0xd8e6f0, 6, 18);
-const camera = new THREE.PerspectiveCamera(45, 1, 0.02, 60);
-scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x6b5a48, 1.25));
-const sun = new THREE.DirectionalLight(0xffe8c8, 2.6);
-sun.position.set(-0.55, 0.65, -0.5); scene.add(sun);
-
-// Ground, with lines that slide past while the crow flies, so it feels like moving.
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x8fb36b, roughness: 1 }));
-ground.rotation.x = -Math.PI / 2; scene.add(ground);
-const lines = new THREE.GridHelper(40, 80, 0x77985a, 0x7fa060); lines.position.y = 0.002; scene.add(lines);
-const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18, depthWrite: false }));
-shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.004; shadow.scale.set(1, 0.4, 1); scene.add(shadow);
-
-// The crow: version 2 (the Blender-made skin) or version 1 (simple shapes), black with the
-// player's colour on it, or solid in the player's colour as in the games.
-let crow, model = params.get("model") === "v1" ? "v1" : "v2", look = params.get("look") === "solid" ? "solid" : "black";
-function makeCrow() {
-  if (crow) { scene.remove(crow.root); crow.dispose(); }
-  const colour = PLAYERS[params.get("player") || player || 1];
-  crow = new HG.Crow(look === "solid" ? { colour, model } : { accent: colour, style: document.getElementById("style").value || "edges+tips", model });
-  scene.add(crow.root);
-  if (window.lab) window.lab.crow = crow;
-  try { if (ACTIONS[action].controls) Object.assign(crow.controls, ACTIONS[action].controls); } catch (e) { /* not set up yet */ }
-}
-document.getElementById("style").value = params.get("style") || "edges+tips";
-var player;
-makeCrow();
-
-// ---- State ----
-let action = ACTIONS[params.get("action")] ? params.get("action") : "flap";
-let view = VIEWS[params.get("view")] ? params.get("view") : "game";
-let speed = params.has("t") ? 0 : Number(params.get("speed") || 1);
-let sph = VIEWS[view].sph.slice();
-let altitude = 0.9, scroll = 0, tourStep = 0, tourTime = 0;
-
-function setAction(name) {
-  action = name;
-  if (name === "tour") { tourStep = 0; tourTime = 0; Object.assign(crow.controls, ACTIONS[TOUR[0]].controls); }
-  else Object.assign(crow.controls, ACTIONS[name].controls);
-  refresh();
-}
-function setView(name) { view = name; sph = VIEWS[name].sph.slice(); refresh(); }
-
-// ---- Controls panel ----
-function buttons(id, items, onClick, isOn) {
-  const box = document.getElementById(id); box.innerHTML = "";
-  for (const [key, item] of Object.entries(items)) {
-    const b = document.createElement("button");
-    b.innerHTML = item.label + (item.key ? "<kbd>" + item.key + "</kbd>" : "");
-    b.onclick = () => onClick(key); b.dataset.key = key; box.appendChild(b);
-  }
-  box.refresh = () => [...box.children].forEach((b) => b.classList.toggle("on", isOn(b.dataset.key)));
-  return box;
-}
-const panels = [
-  buttons("actions", ACTIONS, setAction, (k) => k === action),
-  buttons("views", VIEWS, setView, (k) => k === view),
-  buttons("speeds", { 1: { label: "1×" }, 0.5: { label: "½×" }, 0.25: { label: "¼×" }, 0: { label: "Pause" } }, (k) => { speed = Number(k); refresh(); }, (k) => Number(k) === speed),
-  buttons("players", { 1: { label: "Player 1" }, 2: { label: "Player 2" } }, (k) => { player = k; params.delete("player"); makeCrow(); refresh(); }, (k) => k === player),
-  buttons("models", { v2: { label: "Version 2 (Blender)" }, v1: { label: "Version 1" } }, (k) => { model = k; makeCrow(); refresh(); }, (k) => k === model),
-  buttons("looks", { black: { label: "Black + colour" }, solid: { label: "Solid colour (games)" } }, (k) => { look = k; makeCrow(); refresh(); }, (k) => k === look)
-];
-player = params.get("player") || "1";
-const styleBox = document.getElementById("style");
-styleBox.onchange = () => crow.setStyle(styleBox.value);
-if (params.get("ui") === "0") { document.getElementById("panel").classList.add("hidden"); document.getElementById("status").classList.add("hidden"); }
-function refresh() {
-  panels.forEach((p) => p.refresh());
-  document.getElementById("status").textContent = ACTIONS[action].label + (action === "tour" ? ": " + ACTIONS[TOUR[tourStep]].label : "") + " · " + VIEWS[view].label;
-}
-addEventListener("keydown", (e) => {
-  const hit = Object.entries(ACTIONS).find(([, a]) => a.key === e.key);
-  if (hit) setAction(hit[0]);
-  if (e.key === " ") { speed = speed ? 0 : 1; refresh(); e.preventDefault(); }
-});
-
-// Drag to turn the view, scroll to zoom.
-let drag = null;
-renderer.domElement.addEventListener("pointerdown", (e) => { drag = [e.clientX, e.clientY]; renderer.domElement.setPointerCapture(e.pointerId); });
-renderer.domElement.addEventListener("pointermove", (e) => {
-  if (!drag) return;
-  sph[0] -= (e.clientX - drag[0]) * 0.008; sph[1] = Math.max(-1.2, Math.min(1.55, sph[1] + (e.clientY - drag[1]) * 0.006));
-  drag = [e.clientX, e.clientY];
-});
-addEventListener("pointerup", () => (drag = null));
-renderer.domElement.addEventListener("wheel", (e) => { sph[2] = Math.max(0.5, Math.min(8, sph[2] * (1 + Math.sign(e.deltaY) * 0.1))); e.preventDefault(); }, { passive: false });
-
-// ---- Each frame ----
-function step(dt) {
-  if (action === "tour") {
-    tourTime += dt;
-    if (tourTime > 2.6) { tourTime = 0; tourStep = (tourStep + 1) % TOUR.length; Object.assign(crow.controls, ACTIONS[TOUR[tourStep]].controls); refresh(); }
-  }
-  crow.update(dt);
-  // Height: up in the air when flying, sinking while landing, standing on the ground when perched.
-  const w = crow.weights;
-  const target = w.fly * 0.9 + w.land * 0.32 + w.perch * -crow.footHeight();
-  altitude += (target - altitude) * Math.min(1, dt * 3);
-  crow.root.position.y = altitude;
-  // The ground slides past while flying.
-  scroll = (scroll + dt * 2.5 * (w.fly + w.land * 0.3)) % 0.5;
-  lines.position.z = scroll;
-  shadow.scale.set(1 - altitude * 0.25, 0.4 - altitude * 0.1, 1);
-}
-
-function render() {
-  const w = innerWidth, h = innerHeight;
-  if (renderer.domElement.width !== Math.round(w * renderer.getPixelRatio())) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
-  // The crow faces away from us (-z); angle 0 looks at it from behind.
-  const [az, el, dist] = sph, target = new THREE.Vector3(0, altitude, 0);
-  camera.position.set(target.x + Math.sin(az) * Math.cos(el) * dist, target.y + Math.sin(el) * dist, target.z + Math.cos(az) * Math.cos(el) * dist);
-  camera.lookAt(target);
-  renderer.render(scene, camera);
-}
-
-setAction(action);
-setView(view);
-// For screenshots: jump straight to a moment, then hold still.
-if (params.has("t")) { const t = Number(params.get("t")); for (let s = 0; s < t; s += 1 / 120) step(1 / 120); }
-let last = performance.now();
-function frame(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (speed > 0) step(dt * speed);
-  render();
-  requestAnimationFrame(frame);
-}
-requestAnimationFrame(frame);
-// For testing: lab.setCamera(angle around, height angle, distance) places the camera exactly.
-window.lab = { crow, step, setAction, setView, setCamera: (az, el, dist) => { sph = [az, el, dist]; } };
-window.lab.makeCrow = makeCrow;
-</script>
-</body>
-</html>
-```
-
----
-
-## File: tools/creature-lab.html
+## File: tools/Game-Lab.html
 
 ```html
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Creature lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game Lab</title>
 <!--
-  Try the animals on their own: the chameleon (games/lib/chameleon.js), the cat (games/lib/cat.js)
-  and the crow (games/lib/crow.js; tools/bird-lab.html has more for it, like the flight views).
-  Open this file in Chrome. For screenshots from scripts:
-    creature-lab.html?who=cat&action=walk&view=side&t=2&ui=0
-  who: chameleon | cat | crow     view: front | side | three-quarter (| behind for the crow)     t: seconds to run first
+  Game Lab: look at every 3D piece of the games on its own (the animals, the parts of Climb Together's climb,
+  Fly Together's trees, rocks, nest and arch) and the two whole levels; turn and zoom with the mouse; and mark
+  what you'd like changed with the 3D highlighter, then "Save for Claude".
+  Open this file in Chrome (straight from the folder; no server needed). It replaced creature-lab.html and
+  bird-lab.html in version 2.29.0.
+  The parts:  game-lab/orbit.js (the mouse), stages.js (where things are shown), catalog.js (the list of
+  assets: add new ones there), marks.js (the highlighter), lab.js (the page). Address settings: see lab.js.
 -->
 <style>
-  html, body { margin: 0; height: 100%; background: #e9e1d4; font-family: system-ui, sans-serif; overflow: hidden; }
-  #ui { position: absolute; top: 12px; left: 12px; display: flex; flex-wrap: wrap; gap: 6px; max-width: 70vw; z-index: 2; }
-  #ui button { font: 600 14px system-ui; padding: 6px 10px; border-radius: 8px; border: 0; background: #fff; cursor: pointer; }
-  #ui button.on { background: #7a4fd6; color: #fff; }
-  #ui .gap { width: 100%; height: 0; }
-  canvas { display: block; }
+  :root {
+    --bg: #f3efe8; --ink: #1f1a24; --muted: #6c6472; --line: #ddd5ca; --panel: #ffffff; --accent: #7a4fd6; --mark: #ff2fa8;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; grid-template-columns: 250px 1fr 310px; background: var(--bg); color: var(--ink);
+         font: 14px/1.35 "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+  body.bare { grid-template-columns: 1fr; }
+  body.bare #nav, body.bare #panel, body.bare #hint { display: none; }
+
+  /* The side menu */
+  #nav { background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  #nav header { padding: 16px 16px 10px; }
+  #nav h1 { font-size: 1.25rem; margin: 0 0 2px; }
+  #nav header p { margin: 0 0 10px; color: var(--muted); font-size: .82rem; }
+  #search { width: 100%; font: inherit; padding: 7px 10px; border: 2px solid var(--line); border-radius: 10px; }
+  #list { overflow: auto; padding: 0 8px 16px; flex: 1; }
+  #list h2 { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 14px 8px 4px; }
+  .item { display: flex; align-items: center; justify-content: space-between; width: 100%; text-align: left; font: inherit;
+          border: 0; background: none; color: var(--ink); padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+  .item:hover { background: #f1ece4; }
+  .item.on { background: var(--ink); color: #fff; }
+  .item i { width: 9px; height: 9px; border-radius: 50%; background: var(--mark); flex: none; }
+
+  /* The view */
+  #view { position: relative; min-width: 0; overflow: hidden; touch-action: none; cursor: grab; }
+  #view:active { cursor: grabbing; }
+  #view[data-tool="paint"], #view[data-tool="pin"], #view[data-tool="erase"] { cursor: crosshair; }
+  #view canvas.stage { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #hint { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 5; pointer-events: none;
+          background: rgba(31,26,36,.78); color: #fff; padding: 6px 14px; border-radius: 999px; font-size: .82rem; white-space: nowrap; }
+  #busy { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; background: rgba(243,239,232,.85);
+          font-size: 1.1rem; font-weight: 600; }
+  #busy[hidden] { display: none; }
+
+  /* The panel */
+  #panel { background: var(--panel); border-left: 1px solid var(--line); overflow: auto; padding: 16px; }
+  #panel h1 { font-size: 1.15rem; margin: 0 0 2px; }
+  #about { margin: 0 0 6px; color: var(--muted); font-size: .85rem; }
+  #panel section { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 4px; }
+  #panel section > h2 { font-size: .95rem; margin: 8px 0 4px; }
+  .group h3 { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 10px 0 5px; font-weight: 600; }
+  .row { display: flex; flex-wrap: wrap; gap: 5px; }
+  .row button, .wide { font: inherit; font-size: .82rem; border: 2px solid var(--line); background: #fff; color: var(--ink);
+                       border-radius: 999px; padding: 4px 10px; cursor: pointer; }
+  .row button:hover, .wide:hover { border-color: #a99f93; }
+  .row button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+  #tools .row:first-child button.on { background: var(--mark); border-color: var(--mark); }
+  .pin { display: grid; grid-template-columns: 26px 1fr 22px; gap: 6px; align-items: start; margin: 8px 0; }
+  .pin b { width: 24px; height: 24px; border-radius: 50%; background: var(--mark); color: #fff; display: grid; place-items: center; font-size: .8rem; }
+  .pin small { display: block; color: var(--muted); font-size: .72rem; margin-bottom: 2px; }
+  .pin button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: .9rem; }
+  textarea { width: 100%; font: inherit; font-size: .85rem; border: 2px solid var(--line); border-radius: 10px; padding: 6px 8px; resize: vertical; }
+  #save { display: block; width: 100%; margin-top: 10px; padding: 10px; font: inherit; font-weight: 700; color: #fff; background: var(--accent);
+          border: 0; border-radius: 12px; cursor: pointer; }
+  #save:hover { filter: brightness(1.1); }
+  #saved { color: var(--muted); font-size: .8rem; margin: 6px 0 0; min-height: 1em; overflow-wrap: anywhere; }
+  .small-buttons { display: flex; gap: 6px; margin-top: 8px; }
+  .wide { font-size: .78rem; }
 </style>
 </head>
 <body>
-<div id="ui"></div>
+<nav id="nav">
+  <header>
+    <h1>Game Lab</h1>
+    <p>Every 3D piece of the games, to look at and mark up.</p>
+    <input id="search" type="search" placeholder="Find…">
+  </header>
+  <div id="list"></div>
+</nav>
+
+<main id="view">
+  <div id="hint"></div>
+  <div id="busy" hidden></div>
+</main>
+
+<aside id="panel">
+  <h1 id="title"></h1>
+  <p id="about"></p>
+  <div id="controls"></div>
+  <section>
+    <h2>Mark it up</h2>
+    <div id="tools"></div>
+    <div class="group"><h3>Pins</h3></div>
+    <div id="pins"></div>
+    <div class="group"><h3>Note</h3></div>
+    <textarea id="note" rows="4" placeholder="What would you like changed? (Pins can have their own notes too.)"></textarea>
+    <button id="save">Save for Claude</button>
+    <p id="saved"></p>
+    <div class="small-buttons">
+      <button class="wide" id="clear">Clear marks</button>
+      <button class="wide" id="folder">Change save folder</button>
+    </div>
+  </section>
+</aside>
+
 <script>window.HG = {};</script>
 <script src="../js/vendor/three.min.js"></script>
+<script src="../games/lib/glow.js"></script>
+<script src="../games/lib/flight.js"></script>
+<script src="../games/lib/crow-model.js"></script>
+<script src="../games/lib/crow.js"></script>
+<script src="../games/lib/flight3d.js"></script>
 <script src="../games/lib/creature-kit.js"></script>
 <script src="../games/lib/chameleon-model.js"></script>
 <script src="../games/lib/chameleon.js"></script>
 <script src="../games/lib/cat-model.js"></script>
 <script src="../games/lib/cat.js"></script>
-<script src="../games/lib/crow-model.js"></script>
-<script src="../games/lib/crow.js"></script>
-<script>
-const q = new URLSearchParams(location.search);
-const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-document.body.appendChild(renderer.domElement);
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xe9e1d4);
-scene.add(new THREE.HemisphereLight(0xfff4e0, 0x6b5a48, 1.6));
-const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(1.5, 3, 2.5); scene.add(sun);
-const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
-camera.layers.enable(1);
-const camoTarget = new THREE.WebGLRenderTarget(4, 4);
-
-// A wall for the chameleon, a floor for the cat.
-const wall = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshStandardMaterial({ color: 0xd2b48c, roughness: 0.9 }));
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.MeshStandardMaterial({ color: 0xb59b7a, roughness: 0.9 }));
-floor.rotation.x = -Math.PI / 2;
-scene.add(wall, floor);
-
-// The chameleon's leap: from a spot low on the wall up to a ledge (marked by two little shelves), then round again.
-const LEAP_FROM = new THREE.Vector3(-0.1, -0.75, 0), LEAP_TO = new THREE.Vector3(0.12, 0.6, 0), LEAP_LIFT = 0.12;
-const ledges = new THREE.Group();
-for (const p of [LEAP_FROM, LEAP_TO]) {
-  const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 0.12), new THREE.MeshStandardMaterial({ color: 0x9a6538, roughness: 0.8 }));
-  shelf.position.set(p.x, p.y - 0.56, 0.06); ledges.add(shelf);                     // a shelf just below where its back feet rest
-}
-scene.add(ledges);
-
-let who = q.get("who") || "chameleon", action = q.get("action") || "", view = q.get("view") || "front";
-let creature = null, t = 0, leapClock = 0;
-const ACTIONS = {
-  chameleon: ["rest", "climb", "climb-left", "climb-right", "leap", "hide", "fall", "look"],
-  cat: ["stand", "walk", "sit", "look", "crouch", "leap", "hiss"],
-  crow: ["glide", "flap", "bank-left", "bank-right", "land", "perch", "peck", "stare", "caw"]
-};
-const VIEWS = { chameleon: ["front", "side", "three-quarter"], cat: ["front", "side", "three-quarter"], crow: ["front", "side", "three-quarter", "behind"] };
-
-function make() {
-  if (creature) { scene.remove(creature.root); creature.dispose(); }
-  creature = who === "cat" ? new HG.Cat() : who === "crow" ? new HG.Crow({}) : new HG.Chameleon({ colour: q.get("colour") || "#e0662b" });
-  scene.add(creature.root);
-  wall.visible = who === "chameleon"; floor.visible = who !== "chameleon";
-  if (!ACTIONS[who].includes(action)) action = ACTIONS[who][who === "chameleon" ? 1 : 0];
-  if (!VIEWS[who].includes(view)) view = "front";
-  leapClock = 0;
-  setView(view);
-  buildUi();
-}
-
-function setView(v) {
-  view = v;
-  const leaping = who === "chameleon" && action === "leap";
-  const target = who === "cat" ? new THREE.Vector3(0, 0.45, 0) : who === "crow" ? new THREE.Vector3(0, 0.45, 0) : new THREE.Vector3(0, leaping ? -0.05 : 0, 0.1);
-  const dist = who === "cat" ? 4 : who === "crow" ? 1.9 : leaping ? 4.4 : 2.6;
-  const dir = {
-    cat: { front: [0, 0.3, -1], side: [1, 0.25, 0], "three-quarter": [0.8, 0.45, -0.7] },
-    crow: { front: [0, 0.2, -1], side: [1, 0.15, 0], "three-quarter": [0.7, 0.4, -0.7], behind: [0, 0.35, 1] },
-    chameleon: { front: [0, 0, 1], side: [1, 0, 0.35], "three-quarter": [0.6, -0.25, 0.8] }
-  }[who][v];
-  const d = new THREE.Vector3(...dir).normalize().multiplyScalar(dist);
-  camera.position.copy(target).add(d); camera.lookAt(target);
-  ledges.visible = leaping;
-}
-
-function buildUi() {
-  const ui = document.getElementById("ui");
-  if (q.get("ui") === "0") { ui.style.display = "none"; return; }
-  ui.innerHTML = "";
-  const btn = (label, on, fn) => { const b = document.createElement("button"); b.textContent = label; b.className = on ? "on" : ""; b.onclick = fn; ui.appendChild(b); };
-  for (const w of ["chameleon", "cat", "crow"]) btn(w, w === who, () => { who = w; action = ""; make(); });
-  ui.appendChild(Object.assign(document.createElement("div"), { className: "gap" }));
-  for (const a of ACTIONS[who]) btn(a, a === action, () => { action = a; leapClock = 0; creature.root.position.set(0, 0, 0); setView(view); buildUi(); });
-  ui.appendChild(Object.assign(document.createElement("div"), { className: "gap" }));
-  for (const v of VIEWS[who]) btn(v, v === view, () => { setView(v); buildUi(); });
-}
-
-// Each action, as controls. The chameleon climbs on the spot (the wall slides past under its feet).
-function drive(dt) {
-  t += dt;
-  if (who === "chameleon") {
-    const c = creature.controls;
-    c.velocity = { climb: [0, 0.9], "climb-left": [-0.6, 0.6], "climb-right": [0.6, 0.6] }[action] || [0, 0];
-    c.camo = action === "hide" ? 1 : 0;
-    c.fall = action === "fall" ? 1 : 0;
-    c.lookAt = action === "look" ? new THREE.Vector3(Math.sin(t) * 1.5, 1.2, 1.5) : null;
-    if (action === "leap") {
-      // Rest on the low ledge, leap up to the high one, rest, and round again.
-      leapClock += dt;
-      if (leapClock > 0.7 && !creature.leaping && !creature.leapDone) { creature.leap(); creature.leapDone = true; }
-      const path = HG.Chameleon.leapPath(creature.leapProgress);
-      const k = creature.leapDone ? path.along : 0;
-      creature.root.position.lerpVectors(LEAP_FROM, LEAP_TO, k);
-      creature.root.position.z = creature.leaping ? path.lift * LEAP_LIFT : 0;
-      if (leapClock > 2.6) { leapClock = 0; creature.leapDone = false; }
-    } else creature.root.position.set(0, 0, 0);
-  } else if (who === "crow") {
-    const c = creature.controls;
-    const mode = { land: "land", perch: "perch", peck: "perch", stare: "perch", caw: "perch" }[action] || "fly";
-    Object.assign(c, { mode, flap: action === "flap" ? 1 : 0, bank: action === "bank-left" ? -1 : action === "bank-right" ? 1 : 0,
-      peck: action === "peck" && (t % 1.2) < 0.35 ? 1 : 0, look: action === "stare" ? 0.9 : null });
-    if (action === "caw" && (t % 1.6) < dt) creature.caw();
-    // Up in the air when flying, sinking while landing, standing on the floor when perched.
-    const w = creature.weights;
-    const height = w.fly * 0.75 + w.land * 0.32 + w.perch * -creature.footHeight();
-    creature.root.position.y += (height - creature.root.position.y) * Math.min(1, dt * 4);
-  } else {
-    const c = creature.controls;
-    c.mode = { stand: "stand", walk: "walk", sit: "sit", look: "sit", crouch: "crouch", leap: "leap", hiss: "crouch" }[action];
-    c.speed = 0.9; c.look = action === "look" ? Math.sin(t * 1.3) : 0;
-    c.hiss = action === "hiss" || action === "leap" ? 1 : 0;
-    c.squint = action === "hiss" ? 0 : 0.75;
-  }
-  creature.update(dt);
-}
-
-function resize() {
-  renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-}
-addEventListener("resize", resize); resize();
-make();
-// Run ahead (for screenshots), then animate.
-const ahead = Number(q.get("t") || 0);
-for (let k = 0; k < ahead * 60; k++) drive(1 / 60);
-let last = performance.now();
-function loop(now) {
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  if (q.get("freeze") !== "1") drive(dt);
-  // Camouflage: first draw the scene without the animal, as the picture its skin shows (see creature-kit.js).
-  if (creature.camo > 0.005) {                       // (the crow and cat have no camouflage: camo is undefined for them)
-    creature.root.traverse((o) => o.layers.set(1));
-    const size = renderer.getDrawingBufferSize(new THREE.Vector2());
-    if (camoTarget.width !== size.x || camoTarget.height !== size.y) camoTarget.setSize(size.x, size.y);
-    camera.layers.set(0); renderer.setRenderTarget(camoTarget); renderer.render(scene, camera); renderer.setRenderTarget(null);
-    camera.layers.enable(1);
-    HG.kit.camo.map.value = camoTarget.texture; HG.kit.camo.size.value.copy(size);
-  }
-  renderer.render(scene, camera);
-  requestAnimationFrame(loop);
-}
-requestAnimationFrame(loop);
-window.lab = { scene, camera, get creature() { return creature; } };
-</script>
+<script src="../games/lib/climb3d.js"></script>
+<script src="game-lab/orbit.js"></script>
+<script src="game-lab/stages.js"></script>
+<script src="game-lab/catalog.js"></script>
+<script src="game-lab/marks.js"></script>
+<script src="game-lab/lab.js"></script>
 </body>
 </html>
+```
+
+---
+
+## File: tools/game-lab/lab.js
+
+```js
+// ============================================================================
+// Game Lab: the page itself (tools/Game-Lab.html)
+// ----------------------------------------------------------------------------
+// Builds the side menu from catalog.js, shows the chosen asset on its stage (stages.js), moves the view
+// with the mouse (orbit.js), and runs the highlighter panel (marks.js). Each frame: move the animal (if
+// it's one), then draw.
+// Settings can also go in the address, for screenshots and for reopening a saved view:
+//   Game-Lab.html?asset=cat&action=walk&t=2&freeze=1&ui=0&cam=0,0.45,0,2.3,0.3,4
+//   asset   an id from catalog.js          action  one of its actions (animals)
+//   t       run this many seconds first    freeze  1 = then hold still
+//   ui      0 = hide the menu and panel    cam     where the view looks: x,y,z of the target, turn, tilt, distance
+//   marks   0 = hide the marks
+// ============================================================================
+
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const viewEl = $("view");
+  const orbit = new LAB.Orbit(viewEl);
+  const assets = LAB.catalog;
+  let asset = null, stage = null, speed = 1;
+
+  // ---- The side menu ------------------------------------------------------------
+  function buildMenu(filter = "") {
+    const nav = $("list"); nav.innerHTML = "";
+    const groups = {};
+    for (const a of assets) if ((a.name + " " + a.about + " " + a.group).toLowerCase().includes(filter.toLowerCase())) (groups[a.group] = groups[a.group] || []).push(a);
+    for (const [name, list] of Object.entries(groups)) {
+      const h = document.createElement("h2"); h.textContent = name; nav.appendChild(h);
+      for (const a of list) {
+        const b = document.createElement("button");
+        b.className = "item" + (asset === a ? " on" : "");
+        b.innerHTML = `<span>${a.name}</span>` + (LAB.marks.has(a.id) ? `<i title="Has marks or notes"></i>` : "");
+        b.onclick = () => select(a.id);
+        nav.appendChild(b);
+      }
+    }
+  }
+  $("search").addEventListener("input", (e) => buildMenu(e.target.value));
+
+  // ---- Choosing an asset ----------------------------------------------------------
+  async function select(id) {
+    const next = assets.find((a) => a.id === id) || assets[0];
+    if (!LAB.stagesReady || !LAB.stagesReady[next.stage]) {           // the game scenes take a moment to build the first time
+      $("busy").textContent = { climb: "Building Climb Together…", fly: "Building the whole Fly Together canyon…", studio: "Setting up…" }[next.stage];
+      $("busy").hidden = false;
+      await new Promise((r) => setTimeout(r, 40));                      // (let the message show first)
+      (LAB.stagesReady = LAB.stagesReady || {})[next.stage] = true;
+    }
+    try { stage = LAB.stages.get(next.stage); }
+    catch (err) { $("busy").textContent = "Couldn't build it: " + err.message; console.error(err); return; }
+    $("busy").hidden = true;
+    asset = next;
+    LAB.stages.show(asset.stage);
+    LAB.marks.show(asset, stage);
+    asset.enter(lab);
+    const url = new URL(location.href); url.searchParams.set("asset", asset.id); url.searchParams.delete("cam"); history.replaceState(null, "", url);
+    buildMenu($("search").value); buildPanel();
+  }
+
+  // ---- The panel on the right ------------------------------------------------------
+  function row(label, choices, isOn, choose) {
+    const box = document.createElement("div"); box.className = "group";
+    if (label) { const h = document.createElement("h3"); h.textContent = label; box.appendChild(h); }
+    const r = document.createElement("div"); r.className = "row";
+    for (const [key, text] of choices) {
+      const b = document.createElement("button"); b.textContent = text; b.className = isOn(key) ? "on" : "";
+      b.onclick = () => { choose(key); [...r.children].forEach((x, i) => x.classList.toggle("on", isOn(choices[i][0]))); };
+      r.appendChild(b);
+    }
+    box.appendChild(r); return box;
+  }
+  function buildPanel() {
+    $("title").textContent = asset.name; $("about").textContent = asset.about;
+    const c = $("controls"); c.innerHTML = "";
+    const f = asset.frontYaw || 0;
+    c.appendChild(row("View", [["front", "Front"], ["side", "Side"], ["back", "Back"], ["top", "Top"], ["start", "Start view"]], () => false, (k) => {
+      if (k === "start") return asset.enter(lab);
+      orbit.set({ front: { yaw: f, pitch: 0.12 }, side: { yaw: f + Math.PI / 2, pitch: 0.12 }, back: { yaw: f + Math.PI, pitch: 0.12 }, top: { yaw: f, pitch: 1.5 } }[k]);
+    }));
+    for (const ctl of asset.controls || []) c.appendChild(row(ctl.label, ctl.choices, (k) => ctl.get() === k, (k) => ctl.choose(k, lab)));
+    if (asset.update) c.appendChild(row("Speed", [["1", "1×"], ["0.5", "½×"], ["0.25", "¼×"], ["0", "Pause"]], (k) => Number(k) === speed, (k) => { speed = Number(k); }));
+    buildMarks();
+  }
+
+  // The highlighter: tools, brush size, pins with their notes, a general note, and saving.
+  function buildMarks() {
+    const t = $("tools"); t.innerHTML = "";
+    t.appendChild(row(null, [["look", "👀 Look"], ["paint", "🖌 Paint"], ["pin", "📍 Pin"], ["erase", "🧽 Erase"]], (k) => LAB.marks.tool === k, setTool));
+    t.appendChild(row("Brush", [["small", "Small"], ["medium", "Medium"], ["large", "Large"]], (k) => LAB.marks.brush === k, (k) => LAB.marks.setBrush(k)));
+    const d = LAB.marks.current, pins = $("pins"); pins.innerHTML = "";
+    for (const p of d.pins) {
+      const box = document.createElement("div"); box.className = "pin";
+      const on = p.on ? Object.values(p.on).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : "";
+      box.innerHTML = `<b>${p.n}</b><div><small>${on}</small><textarea rows="2" placeholder="What should change here?"></textarea></div><button title="Remove this pin">✕</button>`;
+      const ta = box.querySelector("textarea"); ta.value = p.note;
+      ta.oninput = () => LAB.marks.setPinNote(p.n, ta.value);
+      box.querySelector("button").onclick = () => LAB.marks.removePin(p.n);
+      pins.appendChild(box);
+    }
+    $("note").value = d.note;
+    $("hint").textContent = {
+      look: "Drag: turn · Scroll: zoom · Right-drag: move · Double-click: look here",
+      paint: "Painting: drag over the model · Right-drag: turn · Scroll: zoom · Esc: stop",
+      pin: "Pins: click a spot to drop a numbered pin, then write its note on the right · Right-drag: turn",
+      erase: "Erasing: drag over paint or pins · Right-drag: turn"
+    }[LAB.marks.tool];
+  }
+  function setTool(k) {
+    LAB.marks.setTool(k); orbit.leftTurns = k === "look";
+    viewEl.dataset.tool = k; buildMarks();
+  }
+  $("note").addEventListener("input", (e) => { LAB.marks.setNote(e.target.value); buildMenu($("search").value); });
+  $("clear").onclick = () => { if (confirm("Remove all the marks and notes on " + asset.name + "?")) LAB.marks.clear(); };
+  LAB.marks.onChange = (newPin) => {
+    buildMarks(); buildMenu($("search").value);
+    // A new pin: put the typing cursor in its note (a moment later: the click itself would take the focus away again).
+    if (newPin) setTimeout(() => { const boxes = $("pins").querySelectorAll("textarea"); const last = boxes[boxes.length - 1]; if (last) last.focus(); }, 60);
+  };
+  addEventListener("keydown", (e) => { if (e.key === "Escape") { document.activeElement.blur(); setTool("look"); } });
+
+  // Save for Claude: a picture of the view as it is now, with the marks, and the notes file.
+  $("save").onclick = async () => {
+    $("saved").textContent = "Saving…";
+    stage.render(orbit, asset.options ? asset.options() : {});        // (drawn now, and copied straight away)
+    const picture = document.createElement("canvas");
+    picture.width = stage.canvas.width; picture.height = stage.canvas.height;
+    picture.getContext("2d").drawImage(stage.canvas, 0, 0);
+    const view = camParam();
+    try {
+      $("saved").textContent = await LAB.marks.save(picture, { view: { target: [orbit.target.x, orbit.target.y, orbit.target.z].map((v) => +v.toFixed(3)), turn: +orbit.yaw.toFixed(3), tilt: +orbit.pitch.toFixed(3), distance: +orbit.distance.toFixed(3) },
+        link: `tools/Game-Lab.html?asset=${asset.id}&cam=${view}` });
+    } catch (err) { $("saved").textContent = "Couldn't save: " + err.message; console.error(err); }
+  };
+  $("folder").onclick = async () => { await LAB.marks.forgetFolder(); $("saved").textContent = "The next save will ask which folder to use."; };
+  const camParam = () => [orbit.target.x, orbit.target.y, orbit.target.z, orbit.yaw, orbit.pitch, orbit.distance].map((v) => +v.toFixed(3)).join(",");
+
+  // ---- The mouse over the view: the highlighter's tools (the orbit has the rest) -----------
+  viewEl.addEventListener("pointerdown", (e) => { if (e.button === 0 && LAB.marks.tool !== "look" && !e.shiftKey) { viewEl.setPointerCapture(e.pointerId); LAB.marks.pointer("down", e, stage.camera); } });
+  viewEl.addEventListener("pointermove", (e) => { if (LAB.marks.tool !== "look") LAB.marks.pointer("move", e, stage.camera); });
+  viewEl.addEventListener("pointerup", (e) => { if (e.button === 0 && LAB.marks.tool !== "look") LAB.marks.pointer("up", e, stage.camera); });
+  const pointUnder = (e) => { const h = stage && LAB.marks.hitAt(e, stage.camera); return h ? h.point : null; };
+  orbit.onDoubleClick = pointUnder;
+  orbit.onZoomPoint = pointUnder;
+
+  // ---- Each frame -------------------------------------------------------------------
+  let last = performance.now(), frozen = params.get("freeze") === "1";
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    if (stage && asset) {
+      // (an animal holds still while you mark it, so the marks land where you see them)
+      if (asset.update && speed > 0 && !frozen && LAB.marks.tool === "look") asset.update(dt * speed, lab);
+      stage.render(orbit, asset.options ? asset.options() : {});
+    }
+    requestAnimationFrame(frame);
+  }
+
+  const lab = window.lab = {
+    orbit, select, setTool,
+    get stage() { return stage; }, get asset() { return asset; },
+    // For scripts: put the view exactly somewhere (as in the cam= address setting).
+    setCamera: (x, y, z, yaw, pitch, distance) => orbit.set({ target: new THREE.Vector3(x, y, z), yaw, pitch, distance })
+  };
+
+  // ---- Start ---------------------------------------------------------------------------
+  if (params.get("ui") === "0") document.body.classList.add("bare");
+  (async () => {
+    await select(params.get("asset") || "chameleon");
+    const action = params.get("action"), ctl = (asset.controls || []).find((c) => c.label === "Action");
+    if (action && ctl) { ctl.choose(action, lab); buildPanel(); }
+    if (params.get("cam")) { const v = params.get("cam").split(",").map(Number); lab.setCamera(...v); }
+    if (params.get("marks") === "0") LAB.marks.setVisible(false);
+    const ahead = Number(params.get("t") || 0);
+    if (asset.update) for (let k = 0; k < ahead * 60; k++) asset.update(1 / 60, lab);
+    requestAnimationFrame(frame);
+  })();
+})();
+```
+
+---
+
+## File: tools/game-lab/catalog.js
+
+```js
+// ============================================================================
+// Game Lab: everything you can look at (tools/Game-Lab.html)
+// ----------------------------------------------------------------------------
+// One entry per thing in the side menu, in groups. Each entry says:
+//   id, name, about          its address name (?asset=...), the name shown, and one line about it
+//   stage                    where it's shown: "studio", "climb" or "fly" (see stages.js)
+//   frontYaw                 which way is its front (for the Front / Side / Back buttons)
+//   enter(lab)               set it up and choose the first view
+//   update(dt, lab)          move it, each frame (animals)
+//   controls                 buttons for it: actions, options, places to jump to
+//   options()                (game stages) what to pass to the stage's render()
+//   describe(point)          (optional) more about a marked spot, e.g. how far down the canyon
+// To add something: add an entry here. Most new pieces of a game can reuse makeClimbPart or the studio.
+// ============================================================================
+
+window.LAB = window.LAB || {};
+
+LAB.catalog = (function () {
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const PLAYERS = { 1: "#e0662b", 2: "#7a4fd6" };
+
+  // A row of buttons: one choice from several. choose(key) is called when one is pressed.
+  const choice = (label, choices, get, choose) => ({ label, choices, get, choose });
+
+  // ---- Animals (in the studio) -------------------------------------------------------
+  // Each animal does its actions on the spot, as in the old creature and bird labs.
+  function animal(id, name, about, settings) {
+    const state = { action: settings.actions[settings.start][0], colour: 1, model: "v2", look: "solid", style: "edges+tips", t: 0, leapClock: 0, altitude: 0.9 };
+    let creature = null, ledges = null;
+    const make = (lab) => {
+      const props = lab.stage.props;
+      if (creature) { props.remove(creature.root); creature.dispose(); }
+      creature = settings.make(state);
+      creature.root.userData.animal = creature;
+      props.add(creature.root);
+      state.leapClock = 0;
+    };
+    const entry = {
+      id, name, about, group: "Animals", stage: "studio", frontYaw: settings.frontYaw,
+      enter(lab) {
+        lab.stage.setLook(settings.look, id === "chameleon");
+        lab.stage.props.clear();
+        make(lab);
+        if (id === "chameleon") {                                     // two little shelves for the leap
+          ledges = new THREE.Group();
+          for (const p of [LEAP_FROM, LEAP_TO]) {
+            const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 0.12), new THREE.MeshStandardMaterial({ color: 0x9a6538, roughness: 0.8 }));
+            shelf.position.set(p.x, p.y - 0.56, 0.06); ledges.add(shelf);
+          }
+          lab.stage.props.add(ledges);
+        }
+        lab.orbit.set(settings.view);
+      },
+      update(dt, lab) {
+        state.t += dt;
+        if (ledges) ledges.visible = state.action === "leap";
+        settings.drive(creature, state, dt);
+        creature.update(dt);
+      },
+      controls: [
+        choice("Action", settings.actions, () => state.action, (k) => { state.action = k; state.leapClock = 0; creature.root.position.set(0, 0, 0); }),
+        ...(settings.extra || []).map((c) => choice(c.label, c.choices, () => state[c.key], (k, lab) => { state[c.key] = k; make(lab); }))
+      ],
+      describe: () => ({ action: state.action })
+    };
+    return entry;
+  }
+
+  // The chameleon's leap: from a spot low on the wall up to a ledge, then round again.
+  const LEAP_FROM = V(-0.1, -0.75, 0), LEAP_TO = V(0.12, 0.6, 0), LEAP_LIFT = 0.12;
+  const colours = [["1", "Player 1 (orange)"], ["2", "Player 2 (purple)"]];
+
+  const chameleon = animal("chameleon", "Chameleon", "Climbs on the wall. 1 unit = snout to tail base.", {
+    look: "indoor", frontYaw: 0, start: 1,
+    view: { target: V(0, 0, 0.1), yaw: 0, pitch: 0, distance: 2.6 },
+    actions: [["rest", "Rest"], ["climb", "Climb"], ["climb-left", "Climb left"], ["climb-right", "Climb right"], ["leap", "Leap"], ["hide", "Hide (camouflage)"], ["fall", "Fall"], ["look", "Look around"]],
+    extra: [{ label: "Colour", key: "colour", choices: colours }],
+    make: (s) => new HG.Chameleon({ colour: PLAYERS[s.colour] }),
+    drive(c, s, dt) {
+      const k = c.controls;
+      k.velocity = { climb: [0, 0.9], "climb-left": [-0.6, 0.6], "climb-right": [0.6, 0.6] }[s.action] || [0, 0];
+      k.camo = s.action === "hide" ? 1 : 0;
+      k.fall = s.action === "fall" ? 1 : 0;
+      k.lookAt = s.action === "look" ? V(Math.sin(s.t) * 1.5, 1.2, 1.5) : null;
+      if (s.action === "leap") {                                      // rest low, leap up, rest, and round again
+        s.leapClock += dt;
+        if (s.leapClock > 0.7 && !c.leaping && !c.leapDone) { c.leap(); c.leapDone = true; }
+        const path = HG.Chameleon.leapPath(c.leapProgress);
+        c.root.position.lerpVectors(LEAP_FROM, LEAP_TO, c.leapDone ? path.along : 0);
+        c.root.position.z = c.leaping ? path.lift * LEAP_LIFT : 0;
+        if (s.leapClock > 2.6) { s.leapClock = 0; c.leapDone = false; }
+      } else c.root.position.set(0, 0, 0);
+    }
+  });
+
+  const cat = animal("cat", "Cat", "Climb Together's cat. 1 unit = chest to hips.", {
+    look: "indoor", frontYaw: Math.PI, start: 1,
+    view: { target: V(0, 0.45, 0), yaw: 2.3, pitch: 0.3, distance: 4 },
+    actions: [["stand", "Stand"], ["walk", "Walk"], ["sit", "Sit"], ["look", "Look around"], ["crouch", "Crouch"], ["leap", "Leap"], ["hiss", "Hiss"]],
+    make: () => new HG.Cat(),
+    drive(c, s) {
+      const k = c.controls;
+      k.mode = { stand: "stand", walk: "walk", sit: "sit", look: "sit", crouch: "crouch", leap: "leap", hiss: "crouch" }[s.action];
+      k.speed = 0.9; k.look = s.action === "look" ? Math.sin(s.t * 1.3) : 0;
+      k.hiss = s.action === "hiss" || s.action === "leap" ? 1 : 0;
+      k.squint = s.action === "hiss" ? 0 : 0.75;
+    }
+  });
+
+  const crow = animal("crow", "Crow", "Fly Together's birds and Climb Together's crow. Wingspan 1 unit.", {
+    look: "outdoor", frontYaw: Math.PI, start: 1,
+    view: { target: V(0, 0.9, 0), yaw: 0, pitch: 0.55, distance: 1.9 },
+    actions: [["glide", "Glide"], ["flap", "Flap"], ["bank-left", "Bank left"], ["bank-right", "Bank right"], ["land", "Landing flare"], ["perch", "Perched"], ["peck", "Peck"], ["stare", "Stare"], ["caw", "Caw"]],
+    extra: [
+      { label: "Colour", key: "colour", choices: colours },
+      { label: "Look", key: "look", choices: [["solid", "Solid colour (as in the games)"], ["black", "Black with colour"]] },
+      { label: "Colour on (black crow)", key: "style", choices: [["edges+tips", "Edges and tips"], ["tips", "Tips"], ["edges", "Edges"], ["none", "All black"]] },
+      { label: "Model", key: "model", choices: [["v2", "Version 2 (Blender)"], ["v1", "Version 1"]] }
+    ],
+    make: (s) => new HG.Crow(s.look === "solid" ? { colour: PLAYERS[s.colour], model: s.model } : { accent: PLAYERS[s.colour], style: s.style, model: s.model }),
+    drive(c, s, dt) {
+      const a = s.action, k = c.controls;
+      Object.assign(k, { mode: { land: "land", perch: "perch", peck: "perch", stare: "perch", caw: "perch" }[a] || "fly",
+        flap: a === "flap" ? 1 : 0, bank: a === "bank-left" ? -1 : a === "bank-right" ? 1 : 0,
+        peck: a === "peck" && (s.t % 1.2) < 0.35 ? 1 : 0, look: a === "stare" ? 0.9 : null });
+      if (a === "caw" && (s.t % 1.6) < dt) c.caw();
+      // Up in the air when flying, sinking while landing, standing on the floor when perched.
+      const w = c.weights, height = w.fly * 0.9 + w.land * 0.32 + w.perch * -c.footHeight();
+      s.altitude += (height - s.altitude) * Math.min(1, dt * 3);
+      c.root.position.y = s.altitude;
+    }
+  });
+
+  // ---- Fly Together's trees, bushes and rocks (in the studio, outdoors) ----------------
+  // One of each, as the game makes them: the game draws many copies of one shape, each coloured on its own.
+  function flyPiece(id, name, about, build, view) {
+    return {
+      id, name, about, group: "Fly Together: pieces", stage: "studio", frontYaw: 0,
+      enter(lab) {
+        lab.stage.setLook("outdoor", false);
+        lab.stage.props.clear();
+        const parts = HG.flight3d.parts(), one = (geo, mat, colour, matrix) => {
+          const m = new THREE.InstancedMesh(geo, mat, 1); m.setMatrixAt(0, matrix);
+          if (colour) m.setColorAt(0, new THREE.Color().setHSL(...colour));
+          lab.stage.props.add(m); return m;
+        };
+        build(parts.shared, one);
+        lab.orbit.set(view);
+      }
+    };
+  }
+  const M4 = (x, y, z, sx, sy, sz) => new THREE.Matrix4().compose(V(x, y, z), new THREE.Quaternion(), V(sx, sy, sz));
+  const flyPieces = [
+    flyPiece("pine", "Pine tree", "The Alpine's trees (about 5-11 m tall in the game; this one 8 m).", (s, one) => {
+      one(s.trunkGeo, s.trunkMat, null, M4(0, -0.2, 0, 1, 8 * 0.35, 1));
+      one(s.crownGeo, s.crownMat, [0.3, 0.45, 0.29], M4(0, -0.2 + 8 * 0.25, 0, 2.6, 8 * 0.8, 2.6));
+    }, { target: V(0, 4, 0), yaw: 0.5, pitch: 0.2, distance: 22 }),
+    flyPiece("bush", "Bush", "Sage-green in the High Desert, dry golden-green in the Deep Desert.", (s, one) => {
+      one(s.bushGeo, s.plainMat, [0.22, 0.45, 0.34], M4(-1.6, -0.2, 0, 1.2, 1.0, 1.2));
+      one(s.bushGeo, s.plainMat, [0.15, 0.48, 0.38], M4(1.6, -0.2, 0, 1.0, 0.8, 1.0));
+    }, { target: V(0, 0.8, 0), yaw: 0.4, pitch: 0.3, distance: 9 }),
+    flyPiece("cactus", "Cactus", "The Deep Desert's cactus.", (s, one) => {
+      one(s.cactusGeo, s.plainMat, [0.31, 0.41, 0.34], M4(0, -0.3, 0, 1, 1, 1));
+    }, { target: V(0, 1.5, 0), yaw: 0.4, pitch: 0.15, distance: 8 }),
+    flyPiece("boulder", "Boulders", "The deserts' rocks: tan in the High Desert, red in the Deep Desert.", (s, one) => {
+      one(s.boulderGeo, s.plainMat, [0.08, 0.35, 0.6], M4(-2.5, 0.6, 0, 2.2, 1.6, 2.0));
+      one(s.boulderGeo, s.plainMat, [0.03, 0.5, 0.45], M4(2.5, 0.4, 0, 1.6, 1.1, 1.5));
+    }, { target: V(0, 1, 0), yaw: 0.3, pitch: 0.3, distance: 13 })
+  ];
+
+  // ---- Climb Together's parts (in the game's own scene) -----------------------------------
+  // One labelled part of the climb on its own (see tagged() in games/lib/climb3d.js), in the game's light.
+  function climbPart(part, name, about, view, extra = {}) {
+    const state = { haze: false };
+    return {
+      id: "climb-" + part, name, about, group: "Climb Together: parts", stage: "climb", frontYaw: 0,
+      enter(lab) {
+        if (view) { lab.orbit.set(view); return; }
+        const box = new THREE.Box3();
+        for (const o of lab.stage.parts[part] || []) box.expandByObject(o);
+        lab.orbit.frameBox(box, 0.3, 0.15);
+      },
+      options: () => ({ only: part, haze: state.haze, chameleons: false, valley: !!extra.valley }),
+      controls: [choice("Haze", [["off", "Clear"], ["on", "As in the game"]], () => (state.haze ? "on" : "off"), (k) => { state.haze = k === "on"; })]
+    };
+  }
+  const climbParts = [
+    climbPart("room", "The room and window", "Back wall with the open window, floor, picture, skirting.", { target: V(0.3, 1.7, 0.2), yaw: 0.25, pitch: 0.1, distance: 6.5 }),
+    climbPart("shelf", "Bookshelf and books", "Four shelves; the books are pushed back so the cat can walk along the front."),
+    climbPart("tank", "The tank", "Where the chameleons start (its front pops off at the escape)."),
+    climbPart("plants", "Potted plants", "On top of the bookshelf; the chameleons climb the middle stems."),
+    climbPart("alley", "Alley and brick wall", "The alley's damp ground and the brick wall, with holes for the broken windows.", { target: V(0.6, 4.6, -1.4), yaw: 0.25, pitch: 0.1, distance: 7 }),
+    climbPart("boxes", "Cardboard boxes", "In the alley, against the brick wall."),
+    climbPart("pipes", "Pipes", "Two across the brick wall and one down, with brackets."),
+    climbPart("windows", "Broken windows", "Dark inside, with shards of glass left in the frames."),
+    climbPart("roof", "Roof, parapet and chimney", "The flat roof behind the parapet, a chimney and a vent."),
+    climbPart("crates", "Wooden crates", "On the roof: low ones in front, tall ones (two stacked) behind."),
+    climbPart("rocks", "Big rocks", "Three rows of rocks with grass and flowers, and the grassy hill behind."),
+    climbPart("tree", "Giant tree", "Roots, trunk, branches, the leafy crown and the bough at the very top."),
+    climbPart("valley", "Valley (the end view)", "Meadows, a river, woods and snowy mountains, seen from the top of the tree.",
+      { target: V(1.4, 6, -40), yaw: 0, pitch: 0.12, distance: 46 }, { valley: true }),
+    climbPart("sky", "Town skyline", "The far-off hills and town behind the roof (a painted picture).")
+  ];
+
+  // ---- Fly Together's nest and arch (in the game's own scene, in the canyon) ---------------
+  function flyPlace(id, name, about, view, group = "Fly Together: pieces") {
+    return {
+      id, name, about, group, stage: "fly", frontYaw: 0, state: { haze: true },
+      enter(lab) { lab.orbit.set(view(lab.stage)); },
+      options() { return { haze: this.state.haze }; },
+      describe: canyonSpot
+    };
+  }
+  // Where a marked spot is in the canyon: how far down it, and which ecosystem.
+  function canyonSpot(point) {
+    const along = Math.round(-point.z), w = HG.flight3d.parts().zoneWeights(along);
+    const names = ["Alpine", "High Desert", "Deep Desert"], parts = names.filter((n, i) => w[i] > 0.05);
+    return { metresDownTheCanyon: along, ecosystem: parts.join(" blending into ") };
+  }
+  const nest = flyPlace("nest", "The nest", "Where each round starts: the tree, its branch and the nest.", (st) => {
+    const box = new THREE.Box3().setFromObject(st.sc.nest.group), c = box.getCenter(V());
+    return { target: V(c.x + 3, HG.flight3d.parts().NEST_HEIGHT + 1, c.z), yaw: Math.PI / 2 - 0.35, pitch: 0.2, distance: 24 };   // (from across the river, with the valley side behind)
+  });
+  const arch = flyPlace("arch", "Stone arch", "The High Desert has three, spanning the valley (23 m high).", (st) => {
+    const z = HG.flight3d.parts().archesBetween(st.world, 1000, 2000)[0];
+    return { target: V(st.world.centre(z), 12, -z), yaw: 0, pitch: 0.28, distance: 75 };   // (from up the valley, as the birds come to it)
+  });
+
+  // ---- The whole levels ----------------------------------------------------------------
+  const places = (list, apply) => choice("Go to", list.map(([key, label]) => [key, label]), () => null, apply);
+
+  const wholeClimb = {
+    id: "climb-level", name: "Climb Together: the whole climb", about: "Every part, as in the game. Haze, chameleons and the end view can be switched.",
+    group: "Whole levels", stage: "climb", frontYaw: 0, state: { haze: false, chameleons: true, valley: false },
+    enter(lab) { lab.orbit.set({ target: V(0.7, 6.8, -1.2), yaw: 0.55, pitch: 0.12, distance: 21 }); this.state.valley = false; },
+    options() { return { only: null, ...this.state }; },
+    controls: []
+  };
+  const S = () => HG.climb3d.level.SECTIONS;
+  wholeClimb.controls = [
+    places([["all", "The whole climb"], ...[0, 1, 2, 3, 4, 5, 6, 7, 8].map((i) => [String(i), "…" + ["the bookshelf", "the potted plants", "the open window", "the alley's boxes", "the brick wall", "the broken windows", "the wooden crates", "the big rocks", "the giant tree"][i]]), ["top", "The very top (the end view)"]],
+      (k, lab) => {
+        wholeClimb.state.valley = k === "top";
+        if (k === "all") return lab.orbit.set({ target: V(0.7, 6.8, -1.2), yaw: 0.55, pitch: 0.12, distance: 21 });
+        if (k === "top") { const L = HG.climb3d.level.LOOKOUT; return lab.orbit.set({ target: V(L.x, L.y - 0.4, L.z - 3), yaw: 0, pitch: 0.25, distance: 4.2 }); }
+        const s = S()[Number(k)];
+        lab.orbit.set({ target: V(s.x, (s.from + s.to) / 2, s.z), yaw: 0.25, pitch: 0.08, distance: Math.max(1.6, (s.to - s.from) * 1.9) });
+      }),
+    choice("Haze", [["off", "Clear"], ["on", "As in the game"]], () => (wholeClimb.state.haze ? "on" : "off"), (k) => { wholeClimb.state.haze = k === "on"; }),
+    choice("Chameleons", [["on", "Show, where you look"], ["off", "Hide"]], () => (wholeClimb.state.chameleons ? "on" : "off"), (k) => { wholeClimb.state.chameleons = k === "on"; }),
+    choice("End view", [["off", "Climbing"], ["on", "Valley and sunset"]], () => (wholeClimb.state.valley ? "on" : "off"), (k) => { wholeClimb.state.valley = k === "on"; })
+  ];
+
+  const wholeCanyon = flyPlace("canyon-level", "Fly Together: the whole canyon", "All 3 km, until it starts again: Alpine, High Desert, Deep Desert.",
+    (st) => ({ target: V(st.world.centre(1500), 0, -1500), yaw: 0.35, pitch: 1.05, distance: 2300 }), "Whole levels");
+  wholeCanyon.state.haze = false;
+  const fly = (z, lab) => lab.orbit.set({ target: V(lab.stage.world.centre(z), 4, -z), yaw: 0, pitch: 0.32, distance: 110 });
+  wholeCanyon.controls = [
+    places([["all", "The whole canyon"], ["start", "The start (the nest)"], ["500", "Alpine (500 m)"], ["900", "Alpine → High Desert"], ["1500", "High Desert (1,500 m)"],
+      ["1900", "High Desert → Deep Desert"], ["2500", "Deep Desert (2,500 m)"], ["2900", "Deep Desert → Alpine"]], (k, lab) => {
+      if (k === "all") return wholeCanyon.enter(lab);
+      if (k === "start") return nest.enter(lab);
+      fly(Number(k), lab);
+    }),
+    choice("Haze", [["off", "Clear"], ["on", "As in the game"]], () => (wholeCanyon.state.haze ? "on" : "off"), (k) => { wholeCanyon.state.haze = k === "on"; })
+  ];
+  for (const p of [nest, arch]) p.controls = [choice("Haze", [["on", "As in the game"], ["off", "Clear"]], () => (p.state.haze ? "on" : "off"), (k) => { p.state.haze = k === "on"; })];
+
+  return [chameleon, cat, crow, ...climbParts, nest, arch, ...flyPieces, wholeClimb, wholeCanyon];
+})();
+```
+
+---
+
+## File: tools/game-lab/stages.js
+
+```js
+// ============================================================================
+// Game Lab: the three places things are shown (tools/Game-Lab.html)
+// ----------------------------------------------------------------------------
+//   studio  a plain backdrop with simple light: the animals, and Fly Together's trees, bushes and rocks
+//   climb   Climb Together's own 3D scene (games/lib/climb3d.js), with the game's own light for where you look
+//   fly     Fly Together's own 3D scene (games/lib/flight3d.js), with the whole canyon built
+// Each stage has: canvas (shown while it's in use), camera, scene, pickable() (what the highlighter can mark),
+// and render(orbit, options). The game stages are made the first time they're needed (they're big).
+// ============================================================================
+
+window.LAB = window.LAB || {};
+
+LAB.stages = (function () {
+  const view = () => document.getElementById("view");
+
+  // ---- The studio ---------------------------------------------------------------
+  function makeStudio() {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+    renderer.domElement.className = "stage";
+    view().appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
+    camera.layers.enable(1);                                       // (the animals are on layer 1 in the games)
+    const hemi = new THREE.HemisphereLight(0xfff4e0, 0x6b5a48, 1.6); scene.add(hemi);
+    const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(1.5, 3, 2.5); scene.add(sun);
+    // A wall (for the chameleon, which climbs on z = 0) and a floor (everything else), with a faint grid of
+    // 10 cm squares on the floor, so sizes can be judged.
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.MeshStandardMaterial({ color: 0xd2b48c, roughness: 0.9 }));
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(300, 48), new THREE.MeshStandardMaterial({ color: 0xb59b7a, roughness: 0.95 }));
+    floor.rotation.x = -Math.PI / 2;
+    const grid = new THREE.GridHelper(20, 200, 0x9c8466, 0xa58d6f); grid.position.y = 0.001;
+    scene.add(wall, floor, grid);
+    const props = new THREE.Group(); scene.add(props);           // whatever is being shown
+    const camoTarget = new THREE.WebGLRenderTarget(4, 4);
+
+    const LOOKS = {
+      indoor: { background: 0xe9e1d4, floor: 0xb59b7a, sky: 0xfff4e0, ground: 0x6b5a48, fill: 1.6, sunColour: 0xffffff, sunStrength: 2.2, grid: true },
+      outdoor: { background: 0xcfe3f2, floor: 0x8fb36b, sky: 0xcfe6ff, ground: 0x6b5a48, fill: 1.25, sunColour: 0xffe8c8, sunStrength: 2.7, grid: false }
+    };
+    return {
+      name: "studio", canvas: renderer.domElement, renderer, scene, camera, props, wall, floor,
+      // look: "indoor" (warm, as the old creature lab) or "outdoor" (sky blue and grass, as the bird lab); showWall: for the chameleon
+      setLook(look, showWall, gridSize = 1) {
+        const L = LOOKS[look];
+        scene.background = new THREE.Color(L.background); floor.material.color.set(L.floor);
+        scene.fog = look === "outdoor" ? new THREE.Fog(L.background, 60, 260) : null;   // (outdoors, the ground fades into the sky far off)
+        hemi.color.set(L.sky); hemi.groundColor.set(L.ground); hemi.intensity = L.fill;
+        sun.color.set(L.sunColour); sun.intensity = L.sunStrength;
+        wall.visible = showWall; floor.visible = !showWall; grid.visible = L.grid && !showWall; grid.scale.setScalar(gridSize);
+      },
+      pickable: () => [props, wall, floor],
+      render(orbit) {
+        const w = view().clientWidth, h = view().clientHeight;
+        const size = renderer.getSize(new THREE.Vector2());
+        if (size.x !== w || size.y !== h) { renderer.setSize(w, h, false); camera.aspect = w / h; }
+        orbit.apply(camera);
+        // Camouflage (the chameleon): first draw the scene without the animal, as the picture its skin shows.
+        let camo = false;
+        props.traverse((o) => { if (o.userData.animal && o.userData.animal.camo > 0.005) camo = true; });
+        if (camo) {
+          const buf = renderer.getDrawingBufferSize(new THREE.Vector2());
+          if (camoTarget.width !== buf.x || camoTarget.height !== buf.y) camoTarget.setSize(buf.x, buf.y);
+          camera.layers.set(0); renderer.setRenderTarget(camoTarget); renderer.render(scene, camera); renderer.setRenderTarget(null);
+          camera.layers.enable(1);
+          HG.kit.camo.map.value = camoTarget.texture; HG.kit.camo.size.value.copy(buf);
+        }
+        renderer.render(scene, camera);
+      }
+    };
+  }
+
+  // ---- Climb Together's scene -----------------------------------------------------
+  function makeClimb() {
+    const sc = HG.climb3d.get(), level = HG.climb3d.level;
+    sc.begin(view(), ["#e0662b", "#7a4fd6"]);
+    sc.canvas.classList.add("stage");
+    // Every labelled part of the climb (see tagged() in climb3d.js): the room, shelf, plants, alley, boxes,
+    // pipes, windows, roof, crates, rocks, tree, creases, sky; and the tank and valley.
+    const parts = {};
+    sc.scene.traverse((o) => { if (o.userData.part) (parts[o.userData.part] = parts[o.userData.part] || []).push(o); });
+    // A chameleon on its climbing route, as near height y as it gets (as in climb3d.js's warmUp).
+    const chamAt = (x, y) => {
+      const r = level.route(x); let best = r[0];
+      for (const p of r) if (Math.abs(p.y - y) < Math.abs(best.y - y)) best = p;
+      const a = level.at(x, best.s);
+      return { x, y: a.y, z: a.z, pitch: level.tilt(x, best.s), s: best.s, vx: 0, vy: 0, camo: 0, fall: 0, spin: 0, hidden: false, lookAt: null };
+    };
+    const lookFrom = { position: new THREE.Vector3(), target: new THREE.Vector3() };
+    return {
+      name: "climb", canvas: sc.canvas, renderer: sc.renderer, scene: sc.scene, camera: sc.camera, sc, parts, level,
+      pickable: () => [sc.world, sc.tank.root, sc.valley.group, ...sc.chams.map((c) => c.root)],
+      // options: { only: a part's name (just that part) or null (everything), haze: true/false, chameleons: true/false,
+      //            valley: true/false (the end: the valley and the setting sun) }
+      render(orbit, options) {
+        orbit.position(lookFrom.position); lookFrom.target.copy(orbit.target);
+        const t = orbit.target, only = options.only;
+        // The game's light follows where the view looks (the room, the alley, daylight, golden hour).
+        const lightAt = { x: t.x, y: Math.max(0.2, Math.min(14, t.y)), z: t.z, dist: 1.3 };
+        // (above 11.9 m the game starts fading in the valley at the end: VALLEY_SHOW in climb3d.js. Kept below it unless asked)
+        if (!options.valley) lightAt.y = Math.min(lightAt.y, 11.85);
+        const chams = options.chameleons
+          ? [chamAt(level.centre(lightAt.y) - 0.11, lightAt.y), chamAt(level.centre(lightAt.y) + 0.11, lightAt.y)]
+          : [0, 1].map(() => ({ x: 0, y: 0, hidden: true, vx: 0, vy: 0 }));
+        const fog = sc.scene.fog;
+        if (!options.haze) { fog.near = 1e4; fog.far = 2e4; } else if (!options.valley) { fog.near = 12; fog.far = 45; }
+        sc.frame({
+          cam: lightAt, chams, tank: { rock: 0, tip: 0 }, shake: 0, view: options.valley ? 1 : 0, cat: null, crow: null, lookFrom,
+          beforeDraw: () => {
+            for (const [name, objects] of Object.entries(parts)) {
+              const show = only ? name === only : name !== "valley" || options.valley;
+              // (the valley: the game fades it in at the end, sc.view; the lab can still hide it)
+              for (const o of objects) o.visible = show && (name !== "valley" || sc.view > 0.001);
+            }
+            sc.camera.near = Math.max(0.005, orbit.distance * 0.01); sc.camera.far = Math.max(80, orbit.distance * 60);
+            sc.camera.updateProjectionMatrix();
+          }
+        });
+      }
+    };
+  }
+
+  // ---- Fly Together's scene --------------------------------------------------------
+  // The canyon is different every round (it's made with random numbers); the lab always makes the same one,
+  // so notes left on it still match next time.
+  const CANYON_SEED = 20261110;
+  const CANYON_LENGTH = 3000;   // metres: Alpine, High Desert, Deep Desert (then it starts again)
+  function makeFly() {
+    const sc = HG.flight3d.get();
+    let s = CANYON_SEED;
+    const real = Math.random;
+    Math.random = () => (s = (s * 16807) % 2147483647) / 2147483647;      // (the same "random" canyon each time)
+    const world = HG.flight.makeWorld();
+    Math.random = real;
+    sc.begin(view(), world, [], world.centre(HG.flight.BIRD_AHEAD));
+    sc.buildRange(0, CANYON_LENGTH);
+    sc.canvas.classList.add("stage");
+    const lookFrom = { position: new THREE.Vector3(), target: new THREE.Vector3() };
+    return {
+      name: "fly", canvas: sc.canvas, renderer: sc.renderer, scene: sc.scene, camera: sc.camera, sc, world, length: CANYON_LENGTH,
+      pickable: () => [sc.terrain, sc.nest.group],
+      // options: { haze: true/false }
+      render(orbit, options) {
+        orbit.position(lookFrom.position); lookFrom.target.copy(orbit.target);
+        const along = -orbit.target.z;                                    // (the game measures distance down the valley as +z)
+        sc.scene.fog.near = options.haze ? 160 : 1e5; sc.scene.fog.far = options.haze ? 1050 : 2e5;
+        sc.frame({
+          z: along - 150, camX: orbit.target.x, zoom: 1, roll: 0, shake: 0, keepTerrain: true, lookFrom,
+          view: { pull: 1, lift: 1, inNest: false }, birds: [],
+          beforeDraw: () => {
+            // (from high above, the rings of distant mountains and the clouds, which the game keeps round the camera, get in the way)
+            const high = orbit.distance > 400;
+            sc.ranges.visible = !high; for (const cloud of sc.clouds) cloud.visible = !high;
+            sc.camera.near = Math.max(0.05, orbit.distance * 0.005); sc.camera.far = Math.max(4000, orbit.distance * 4);
+            sc.camera.updateProjectionMatrix();
+          }
+        });
+      }
+    };
+  }
+
+  const made = {};
+  const makers = { studio: makeStudio, climb: makeClimb, fly: makeFly };
+  return {
+    // The stage with this name, made the first time it's asked for.
+    get(name) { return made[name] || (made[name] = makers[name]()); },
+    // Show one stage's picture and hide the others'.
+    show(name) { for (const [key, stage] of Object.entries(made)) stage.canvas.style.display = key === name ? "block" : "none"; }
+  };
+})();
+```
+
+---
+
+## File: tools/game-lab/orbit.js
+
+```js
+// ============================================================================
+// Game Lab: moving the view with the mouse (tools/Game-Lab.html)
+// ----------------------------------------------------------------------------
+// The camera circles a point it looks at (the "target"):
+//   drag            turn around it        (in a marking tool: drag with the right button)
+//   scroll          zoom in and out, toward whatever is under the mouse
+//   right-drag, or shift + drag     slide the view sideways and up/down
+//   double-click    look at the spot you clicked (handy in the big levels)
+//   W A S D, Q E    slide the view; arrow keys turn it
+// three.js has its own version of this (OrbitControls), but it's a module, and modules
+// can't be loaded from a plain folder (file:///), so this is a small one written for the lab.
+// ============================================================================
+
+window.LAB = window.LAB || {};
+
+LAB.Orbit = class {
+  constructor(element) {
+    this.element = element;
+    this.target = new THREE.Vector3();
+    this.yaw = 0;          // turned around the target: 0 = looking from the front (+z), toward -z
+    this.pitch = 0.2;      // looking down from above (radians; 0 = level)
+    this.distance = 3;     // metres from the target
+    this.minDistance = 0.05; this.maxDistance = 6000;
+    this.leftTurns = true; // false while a marking tool is using the left button
+    this.onDoubleClick = null;   // set by the lab: (event) => a point to look at, or null
+    this.onZoomPoint = null;     // set by the lab: (event) => the point under the mouse, or null
+    this.changed = true;
+    this.listen();
+  }
+
+  // Where the camera is, from the target, the turn and the distance.
+  position(out = new THREE.Vector3()) {
+    const c = Math.cos(this.pitch);
+    return out.set(this.target.x + Math.sin(this.yaw) * c * this.distance, this.target.y + Math.sin(this.pitch) * this.distance,
+      this.target.z + Math.cos(this.yaw) * c * this.distance);
+  }
+
+  // Put a three.js camera where the orbit says (and set how near and far it sees, to suit the distance).
+  apply(camera) {
+    this.position(camera.position); camera.up.set(0, 1, 0); camera.lookAt(this.target);
+    camera.near = Math.max(0.005, this.distance * 0.01); camera.far = Math.max(100, this.distance * 60);
+    camera.updateProjectionMatrix();
+  }
+
+  set({ target, yaw, pitch, distance }) {
+    if (target) this.target.copy(target);
+    if (yaw != null) this.yaw = yaw;
+    if (pitch != null) this.pitch = pitch;
+    if (distance != null) this.distance = distance;
+    this.changed = true;
+  }
+
+  // Look at a box (THREE.Box3) from a direction, far enough back to see all of it.
+  frameBox(box, yaw = this.yaw, pitch = this.pitch, fov = 40) {
+    const size = box.getSize(new THREE.Vector3()), radius = size.length() / 2;
+    this.set({ target: box.getCenter(new THREE.Vector3()), yaw, pitch, distance: radius / Math.sin(fov / 2 * Math.PI / 180) * 0.75 });
+  }
+
+  // Slide the view sideways (right) and up, in metres, as seen on screen.
+  slide(right, up) {
+    const side = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
+    const lift = new THREE.Vector3(-Math.sin(this.pitch) * Math.sin(this.yaw), Math.cos(this.pitch), -Math.sin(this.pitch) * Math.cos(this.yaw));
+    this.target.addScaledVector(side, right).addScaledVector(lift, up);
+    this.changed = true;
+  }
+
+  listen() {
+    const el = this.element;
+    let drag = null;
+    el.addEventListener("contextmenu", (e) => e.preventDefault());
+    el.addEventListener("pointerdown", (e) => {
+      const slide = e.button === 1 || e.button === 2 && e.shiftKey || e.button === 0 && e.shiftKey;
+      const turn = !slide && (e.button === 2 || e.button === 0 && this.leftTurns);
+      if (!slide && !turn) return;
+      drag = { x: e.clientX, y: e.clientY, slide };
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      drag.x = e.clientX; drag.y = e.clientY;
+      if (drag.slide) {
+        const perPixel = this.distance * 1.1 / el.clientHeight;      // metres the view moves per pixel dragged
+        this.slide(-dx * perPixel, dy * perPixel);
+      } else {
+        this.yaw -= dx * 0.008;
+        this.pitch = Math.max(-1.5, Math.min(1.55, this.pitch + dy * 0.006));
+        this.changed = true;
+      }
+    });
+    el.addEventListener("pointerup", () => (drag = null));
+    el.addEventListener("pointercancel", () => (drag = null));
+    el.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const k = Math.pow(1.0015, e.deltaY);                            // smooth on touchpads, steps on mouse wheels
+      const before = this.distance;
+      this.distance = Math.max(this.minDistance, Math.min(this.maxDistance, this.distance * k));
+      // Zooming in moves toward whatever is under the mouse (so you can dive into one spot of a big level).
+      const point = k < 1 && this.onZoomPoint ? this.onZoomPoint(e) : null;
+      if (point) this.target.lerp(point, 1 - this.distance / before);
+      this.changed = true;
+    }, { passive: false });
+    el.addEventListener("dblclick", (e) => {
+      const point = this.onDoubleClick && this.onDoubleClick(e);
+      if (point) { this.target.copy(point); this.distance = Math.min(this.distance, Math.max(0.3, this.distance * 0.6)); this.changed = true; }
+    });
+    addEventListener("keydown", (e) => {
+      if (e.target.closest && e.target.closest("input, textarea, select")) return;   // (not while typing a note)
+      const step = this.distance * 0.06, turn = 0.06;
+      const keys = {
+        a: () => this.slide(-step, 0), d: () => this.slide(step, 0), q: () => this.slide(0, -step), e: () => this.slide(0, step),
+        w: () => { this.distance = Math.max(this.minDistance, this.distance * 0.92); }, s: () => { this.distance = Math.min(this.maxDistance, this.distance / 0.92); },
+        arrowleft: () => { this.yaw += turn; }, arrowright: () => { this.yaw -= turn; },
+        arrowup: () => { this.pitch = Math.min(1.55, this.pitch + turn); }, arrowdown: () => { this.pitch = Math.max(-1.5, this.pitch - turn); }
+      };
+      const act = keys[e.key.toLowerCase()];
+      if (act && !e.ctrlKey && !e.metaKey) { act(); this.changed = true; e.preventDefault(); }
+    });
+  }
+};
+```
+
+---
+
+## File: tools/game-lab/marks.js
+
+```js
+// ============================================================================
+// Game Lab: the 3D highlighter (tools/Game-Lab.html)
+// ----------------------------------------------------------------------------
+// Mark what you'd like changed, right on the model:
+//   Paint   drag over a surface: a bright glow is painted onto it (for "this area")
+//   Pin     click a spot: a numbered pin goes there, with its own note (for "this exact spot")
+//   Erase   drag over paint or pins to remove them
+// Marks are kept per asset (and remembered by the browser between visits). "Save for Claude" saves a
+// picture of the view with the marks, and a notes file saying what each mark is on (the part, its
+// material, the animal's joint, how far down the canyon...) and exactly where in 3D, into the folder
+// you choose (the project's lab-notes folder), or into Downloads.
+// ============================================================================
+
+window.LAB = window.LAB || {};
+
+LAB.marks = (function () {
+  // ---- Tuning ----
+  const PAINT_COLOUR = 0xff2fa8;      // the highlighter's colour (a bright pink that no asset uses)
+  const PAINT_OPACITY = 0.6;          // how see-through the paint is (0 = invisible, 1 = solid)
+  const PIN_COLOUR = "#ff2fa8";       // the pins' colour
+  const PIN_SIZE = 0.05;              // how big pins look, as a share of the view's height
+  const BRUSH_SIZES = { small: 0.006, medium: 0.016, large: 0.04 };   // brush radius, as a share of the distance to the spot
+  const STORAGE_KEY = "game-lab-marks";
+
+  const raycaster = new THREE.Raycaster();
+  raycaster.layers.enableAll();                                      // (the animals are on layer 1 in Climb Together)
+  const all = load();                                                 // { assetId: { paint: [...], pins: [...], note } }
+  let asset = null, stage = null, group = null, dots = null, pinsGroup = null;
+  const discGeo = new THREE.CircleGeometry(1, 18);
+  const paintMat = new THREE.MeshBasicMaterial({ color: PAINT_COLOUR, transparent: true, opacity: PAINT_OPACITY, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, side: THREE.DoubleSide, toneMapped: false, fog: false });
+  const dotMat = new THREE.MeshBasicMaterial({ color: PAINT_COLOUR, toneMapped: false, fog: false });
+
+  function load() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { return {}; } }
+  function store() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(all)); } catch (e) { /* private window: kept for this visit only */ } }
+  const data = () => (all[asset.id] = all[asset.id] || { paint: [], pins: [], note: "" });
+
+  // ---- Showing the marks -------------------------------------------------------------
+  // The marks live in the stage's own scene, in a group of their own, rebuilt when the asset changes.
+  function show(newAsset, newStage) {
+    if (group && group.parent) group.parent.remove(group);
+    asset = newAsset; stage = newStage;
+    group = new THREE.Group(); group.name = "lab marks"; group.renderOrder = 10;
+    stage.scene.add(group);
+    pinsGroup = new THREE.Group(); group.add(pinsGroup);
+    rebuildPaint(); rebuildPins();
+  }
+
+  // All the paint is one shape drawn many times (one round dot per brush dab, flat on the surface).
+  function rebuildPaint() {
+    if (dots) { group.remove(dots); dots.dispose(); }
+    const list = data().paint, room = Math.max(256, 2 ** Math.ceil(Math.log2(list.length + 1)));
+    dots = new THREE.InstancedMesh(discGeo, paintMat, room); dots.count = 0; dots.frustumCulled = false;
+    group.add(dots);
+    for (const d of list) placeDot(d);
+  }
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), zAxis = new THREE.Vector3(0, 0, 1);
+  function placeDot(d) {
+    if (dots.count >= dots.instanceMatrix.count) return rebuildPaint();
+    const n = new THREE.Vector3(...d.n), p = new THREE.Vector3(...d.p).addScaledVector(n, d.r * 0.05);
+    q.setFromUnitVectors(zAxis, n);
+    dots.setMatrixAt(dots.count++, m4.compose(p, q, new THREE.Vector3(d.r, d.r, d.r)));
+    dots.instanceMatrix.needsUpdate = true;
+  }
+
+  // A pin: a numbered tag standing on the spot (always drawn on top, so it's never hidden), and a small dot.
+  function pinTexture(n) {
+    const c = document.createElement("canvas"); c.width = 64; c.height = 88;
+    const g = c.getContext("2d");
+    g.fillStyle = PIN_COLOUR; g.strokeStyle = "#fff"; g.lineWidth = 5;
+    g.beginPath(); g.arc(32, 32, 27, 0, Math.PI * 2); g.fill(); g.stroke();
+    g.beginPath(); g.moveTo(20, 54); g.lineTo(32, 86); g.lineTo(44, 54); g.fill();
+    g.fillStyle = "#fff"; g.font = "bold 32px system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(String(n), 32, 34);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  }
+  function rebuildPins() {
+    for (const o of [...pinsGroup.children]) { pinsGroup.remove(o); if (o.material.map) o.material.map.dispose(); }
+    for (const pin of data().pins) {
+      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: pinTexture(pin.n), depthTest: false, depthWrite: false, sizeAttenuation: false, toneMapped: false, fog: false }));
+      tag.center.set(0.5, 0); tag.scale.set(PIN_SIZE * 64 / 88, PIN_SIZE, 1); tag.position.set(...pin.p); tag.renderOrder = 1000;
+      pinsGroup.add(tag);
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 8), dotMat);
+      dot.position.set(...pin.p); dot.scale.setScalar(pin.r || 0.01); pinsGroup.add(dot);
+    }
+  }
+
+  // ---- Finding what's under the mouse ------------------------------------------------
+  const isShown = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+  function hitAt(event, camera) {
+    const rect = event.target.getBoundingClientRect();
+    raycaster.setFromCamera({ x: (event.clientX - rect.left) / rect.width * 2 - 1, y: -(event.clientY - rect.top) / rect.height * 2 + 1 }, camera);
+    const hits = raycaster.intersectObjects(stage.pickable(), true).filter((h) => isShown(h.object) && h.object.isMesh && !h.object.isSprite && h.face);
+    if (!hits.length) return null;
+    const h = hits[0];
+    const n = h.face.normal.clone().transformDirection(h.object.matrixWorld);
+    if (n.dot(raycaster.ray.direction) > 0) n.negate();               // (always facing the camera)
+    return { point: h.point, normal: n, object: h.object, instanceId: h.instanceId, distance: h.distance };
+  }
+
+  // What a spot is on, in words, for the notes file.
+  function whatIsAt(hit) {
+    const what = {}, o = hit.object;
+    for (let p = o; p; p = p.parent) if (p.userData.part) { what.part = p.userData.part; break; }
+    const mats = [].concat(o.material || []).map((m) => m.name).filter(Boolean);
+    if (mats.length) what.material = mats.join(", ");
+    if (o.name) what.object = o.name;
+    if (o.geometry && o.geometry.name) what.shape = o.geometry.name;
+    if (hit.instanceId != null) what.copy = "copy " + hit.instanceId + " of a shape drawn many times";
+    if (o.isSkinnedMesh && o.skeleton) {                               // an animal: the nearest joint
+      let best = null, d = Infinity;
+      const p = new THREE.Vector3();
+      for (const bone of o.skeleton.bones) { bone.getWorldPosition(p); const k = p.distanceTo(hit.point); if (k < d) { d = k; best = bone; } }
+      if (best) what.joint = best.name || "(unnamed joint)";
+    }
+    if (asset.describe) Object.assign(what, asset.describe(hit.point));
+    return what;
+  }
+
+  // ---- The tools ------------------------------------------------------------------------
+  let tool = "look", brush = "medium", painting = false, lastDab = null, changed = false, onChange = () => {};
+  function setTool(t) { tool = t; }
+  function setBrush(b) { brush = b; }
+
+  // Called by the lab for left-button presses and drags over the view (when a tool is chosen).
+  function pointer(type, event, camera) {
+    if (tool === "look") return;
+    if (type === "down") painting = true;
+    // (only redraw the panel when a stroke changed something: a new pin's note box must keep the typing focus)
+    if (type === "up") { painting = false; lastDab = null; if (changed) { changed = false; store(); onChange(); } return; }
+    if (!painting) return;
+    const hit = hitAt(event, camera);
+    if (!hit) return;
+    const r = hit.distance * BRUSH_SIZES[brush];
+    if (tool === "paint") {
+      if (lastDab && lastDab.distanceTo(hit.point) < r * 0.45) return;   // (dabs a little apart, so a stroke stays smooth but light)
+      lastDab = hit.point.clone();
+      const d = { p: round(hit.point), n: round(hit.normal, 3), r: +r.toFixed(4), on: whatIsAt(hit) };
+      data().paint.push(d); placeDot(d); changed = true;
+    } else if (tool === "pin" && type === "down") {
+      const list = data().pins, n = list.reduce((m, p) => Math.max(m, p.n), 0) + 1;
+      list.push({ n, p: round(hit.point), r: +(hit.distance * 0.004).toFixed(4), note: "", on: whatIsAt(hit) });
+      rebuildPins(); painting = false; store(); onChange(n);
+    } else if (tool === "erase") {
+      const d = data(), before = d.paint.length + d.pins.length, near = (p) => hit.point.distanceTo(new THREE.Vector3(...p)) < r * 1.5;
+      d.paint = d.paint.filter((x) => !near(x.p)); d.pins = d.pins.filter((x) => !near(x.p));
+      if (d.paint.length + d.pins.length !== before) { rebuildPaint(); rebuildPins(); changed = true; }
+    }
+  }
+  const round = (v, places = 4) => [v.x, v.y, v.z].map((x) => +x.toFixed(places));
+
+  // ---- Saving for Claude ---------------------------------------------------------------
+  // A picture of the view (with the marks) and a notes file, into the chosen folder (remembered), or Downloads.
+  async function save(picture, extra) {
+    const d = data(), stamp = new Date(), pad = (n) => String(n).padStart(2, "0");
+    const name = `${stamp.getFullYear()}-${pad(stamp.getMonth() + 1)}-${pad(stamp.getDate())}_${pad(stamp.getHours())}${pad(stamp.getMinutes())}_${asset.id}`;
+    const notes = {
+      what: "Notes left in tools/Game-Lab.html for Claude (or anyone working on the game).",
+      asset: asset.id, assetName: asset.name, savedAt: stamp.toISOString(),
+      picture: name + ".png",
+      note: d.note,
+      pins: d.pins.map((p) => ({ number: p.n, note: p.note, on: p.on, at: p.p })),
+      paint: d.paint.length ? {
+        dabs: d.paint.length,
+        covers: summarise(d.paint),                                   // what the paint is on, in words, and how many dabs
+        box: boxOf(d.paint),
+        dabsAt: d.paint.map((x) => x.p)
+      } : null,
+      view: extra.view,
+      reopen: extra.link,
+      howToRead: "Points are [x, y, z] in metres in the game's own 3D space (y is up). Each pin's and paint area's 'on' says what it touches. Open 'reopen' (relative to the project folder) to see the same view; the marks are remembered in that browser."
+    };
+    const json = new Blob([JSON.stringify(notes, null, 2)], { type: "application/json" });
+    const png = await new Promise((done) => picture.toBlob(done, "image/png"));
+    return writeFiles([[name + ".json", json], [name + ".png", png]]);
+  }
+  // Paint dabs, grouped by what they're on.
+  function summarise(paint) {
+    const groups = {};
+    for (const dab of paint) { const key = JSON.stringify(dab.on || {}); (groups[key] = groups[key] || { on: dab.on || {}, dabs: 0 }).dabs++; }
+    return Object.values(groups).sort((a, b) => b.dabs - a.dabs);
+  }
+  function boxOf(paint) {
+    const b = new THREE.Box3();
+    for (const d of paint) b.expandByPoint(new THREE.Vector3(...d.p));
+    return { from: round(b.min, 3), to: round(b.max, 3), middle: round(b.getCenter(new THREE.Vector3()), 3) };
+  }
+
+  // The folder to save into: picked once (the project's lab-notes folder is best), remembered by the browser.
+  // Browsers can't write into a folder without asking, so the first save asks; if that's not possible, Downloads.
+  async function folder() {
+    if (!window.showDirectoryPicker) return null;
+    let handle = await remembered();
+    if (handle && (await handle.queryPermission({ mode: "readwrite" })) !== "granted" && (await handle.requestPermission({ mode: "readwrite" })) !== "granted") handle = null;
+    if (!handle) {
+      try { handle = await showDirectoryPicker({ id: "game-lab-notes", mode: "readwrite", startIn: "documents" }); }
+      catch (e) { return null; }                                       // (they closed the picker: use Downloads)
+      remember(handle);
+    }
+    return handle;
+  }
+  async function writeFiles(files) {
+    const dir = await folder().catch(() => null);
+    if (dir) {
+      for (const [name, blob] of files) { const f = await dir.getFileHandle(name, { create: true }); const w = await f.createWritable(); await w.write(blob); await w.close(); }
+      return "Saved into the folder “" + dir.name + "”: " + files.map((f) => f[0]).join(" and ");
+    }
+    for (const [name, blob] of files) {
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }
+    return "Saved to Downloads: " + files.map((f) => f[0]).join(" and ");
+  }
+  // (The chosen folder is kept in the browser's own small database, so it's only asked for once.)
+  function db() { return new Promise((ok, fail) => { const r = indexedDB.open("game-lab", 1); r.onupgradeneeded = () => r.result.createObjectStore("handles"); r.onsuccess = () => ok(r.result); r.onerror = fail; }); }
+  async function remembered() { try { const d = await db(); return await new Promise((ok) => { const r = d.transaction("handles").objectStore("handles").get("notes"); r.onsuccess = () => ok(r.result || null); r.onerror = () => ok(null); }); } catch (e) { return null; } }
+  async function remember(h) { try { const d = await db(); d.transaction("handles", "readwrite").objectStore("handles").put(h, "notes"); } catch (e) { /* asked again next time */ } }
+  async function forgetFolder() { try { const d = await db(); d.transaction("handles", "readwrite").objectStore("handles").delete("notes"); } catch (e) { /* nothing kept */ } }
+
+  return {
+    show, pointer, setTool, setBrush, save, forgetFolder, hitAt,
+    get tool() { return tool; }, get brush() { return brush; },
+    set onChange(f) { onChange = f; },
+    get current() { return data(); },
+    has: (id) => { const d = all[id]; return !!d && (d.paint.length || d.pins.length || d.note); },
+    setNote(text) { data().note = text; store(); },
+    setPinNote(n, text) { const p = data().pins.find((x) => x.n === n); if (p) { p.note = text; store(); } },
+    removePin(n) { const d = data(); d.pins = d.pins.filter((x) => x.n !== n); rebuildPins(); store(); onChange(); },
+    clear() { const d = data(); d.paint = []; d.pins = []; d.note = ""; rebuildPaint(); rebuildPins(); store(); onChange(); },
+    setVisible(v) { if (group) group.visible = v; }
+  };
+})();
+```
+
+---
+
+## File: lab-notes/README.md
+
+```markdown
+# Lab notes
+
+Notes the designer leaves in the Game Lab (`tools/Game-Lab.html`) land here: one pair of files per save,
+named by date, time and what was marked, e.g. `2026-11-10_1432_climb-tree.json` and `.png`. Only this README
+is published: the notes themselves are working notes, kept out of the public repository by `.gitignore`.
+
+## Reading a note (for Claude, or anyone working on the games)
+
+- **The picture** (`.png`) is the view as the designer saw it, with their marks: pink paint over an area, and
+  numbered pink pins on exact spots. Look at it first.
+- **The notes file** (`.json`):
+  - `asset`, `assetName`: what was being looked at (an id from `tools/game-lab/catalog.js`).
+  - `note`: the designer's general note.
+  - `pins`: each pin's `number` (as in the picture), its `note`, what it's `on`, and where (`at`).
+  - `paint`: how many brush `dabs`, what they `cover` (grouped by what they're on, most first), the `box` they fill,
+    and every dab's position (`dabsAt`).
+  - `on` says what a mark touches, in the game's own words: the level's `part` (from `tagged()` in
+    `games/lib/climb3d.js`, e.g. "tree", "shelf"), its `material` (the key in that file's materials, e.g. "canopyB"),
+    the `shape` (e.g. "pine tree"), the animal's nearest `joint` (e.g. "leg.1.upper") and the `action` it was doing,
+    a `copy` number for shapes drawn many times, and in Fly Together's canyon how many `metresDownTheCanyon` and in
+    which `ecosystem`.
+  - Positions are `[x, y, z]` in metres, in the game's own 3D space (y is up). In Fly Together the canyon runs
+    toward -z (so 500 m down the canyon is z = -500).
+  - `view` and `reopen`: where the camera was. Open `reopen` (relative to the project folder) to see the same view.
+- **Before changing anything**, describe back what you understood from the marks and check it with the designer,
+  as with a storyboard (see `docs/making-games/README.md`).
 ```
 
 ---
@@ -12235,14 +13093,15 @@ const ORDER = [
   "blender/model_kit.py", "blender/export_model.py", "blender/build_cat.py", "blender/export_cat.py", "tools/cat-skeleton.cjs", "storyboards/cat-model/README.md",
   "games/examples/game-template.js",
   "heartbeat-launcher.ahk", "setup.bat", "setup.ps1",
-  "tools/try-game.mjs", "tools/bird-lab.html", "tools/creature-lab.html", "tools/make-ai-bundle.mjs", "tools/ABOUT-TOOLS.txt"
+  "tools/try-game.mjs", "tools/Game-Lab.html", "tools/game-lab/lab.js", "tools/game-lab/catalog.js", "tools/game-lab/stages.js",
+  "tools/game-lab/orbit.js", "tools/game-lab/marks.js", "lab-notes/README.md", "tools/make-ai-bundle.mjs", "tools/ABOUT-TOOLS.txt"
 ];
 // Never included: generated, private, third-party or too large to be useful.
 const SKIP_DIRS = ["node_modules", "chrome-profile", "test-output", ".git", "unpublished", "references", "archive"];
 const SKIP_FILES = [OUT, "UIA.ahk", "three.min.js", "heartbeat-log.txt", "package.json", "package-lock.json", "CLAUDE.md"];
 // Listed by name only, to keep the bundle small enough for most AI tools: the sensor
 // troubleshooting pages and old helper scripts, and the animals' generated model data.
-const LIST_ONLY = (f) => (/^tools\/.*\.(html|ahk)$/i.test(f) && f !== "tools/bird-lab.html" && f !== "tools/creature-lab.html")
+const LIST_ONLY = (f) => (/^tools\/.*\.(html|ahk)$/i.test(f) && f !== "tools/Game-Lab.html")
   || f === "games/lib/crow-model.js" || f === "blender/crow-skeleton.json"
   || f === "games/lib/chameleon-model.js" || f === "blender/chameleon-skeleton.json"
   || f === "games/lib/cat-model.js" || f === "blender/cat-skeleton.json";
@@ -12308,12 +13167,12 @@ TOOLS (for troubleshooting and experiments; the games don't use these)
   motion-viewer.html        one sensor, live X/Y/Z chart and tilting cube (normal mode)
   fast-motion.html          one sensor, fast motion mode, choice of sample rate
   two-player-motion.html    both sensors, cubes side by side (fast motion mode)
-  bird-lab.html             no sensors: the crow model (games/lib/crow.js) on its own, from any
-                            angle, gliding, flapping, banking, landing, perched, pecking and staring
-  creature-lab.html         no sensors: the animals on their own: the chameleon (climbing, leaping,
-                            hiding, falling), the cat (standing, walking, sitting, crouching, leaping,
-                            hissing) and the crow (gliding, flapping, banking, landing, perched,
-                            pecking, staring, cawing)
+  Game-Lab.html             no sensors: every 3D piece of the games on its own (the animals doing
+                            their actions, each part of Climb Together's climb, Fly Together's trees,
+                            rocks, nest and arch) and both whole levels. Drag to turn, scroll to zoom.
+                            Mark what should change with the 3D highlighter (paint, numbered pins,
+                            notes), then "Save for Claude" (into lab-notes\). Its parts are in game-lab\.
+                            (It replaced bird-lab.html and creature-lab.html in version 2.29.0.)
 
   polar-auto-pair.ahk       clicks the pairing popups for the test pages above
   popup-logger.ahk          records every window that appears (for diagnosing popups)

@@ -54,7 +54,7 @@ the games full screen in Chrome; a **Stream Deck MK.2** is the controller. It mu
 be simple enough for a **volunteer** to start: turn on laptop, turn on sensors,
 double-click "Start Heartbeat Games", wait for "All set!".
 
-Current version: **2.28.1** (shown bottom-right on screen; set in `js/app.js`).
+Current version: **2.29.0** (shown bottom-right on screen; set in `js/app.js`).
 
 ## Folder layout
 
@@ -111,10 +111,12 @@ storyboards/<game>/     the designer's whiteboard storyboard photos, one folder 
                         crow-model/references/ hold photo-based or stock pictures: kept locally, never published.
 heartbeat-launcher.ahk  AutoHotkey v2: opens Chrome kiosk, connects players, clicks pairing popups
 setup.bat / setup.ps1   one-time install: Task Scheduler task (runs launcher as admin) + desktop shortcut
-tools/                  try-game.mjs (simulated-sensor test runs), make-ai-bundle.mjs, bird-lab.html (the crow
-                        on its own), creature-lab.html (the chameleon, the cat and the crow on their own),
-                        crow-skeleton.cjs (joint positions for Blender), and sensor test pages
+tools/                  Game-Lab.html (every 3D piece and both whole levels, to look at and mark up; its parts in
+                        tools/game-lab/; see "Game Lab" below), try-game.mjs (simulated-sensor test runs),
+                        make-ai-bundle.mjs, crow-skeleton.cjs (joint positions for Blender), and sensor test pages
                         and old scripts for troubleshooting
+lab-notes/              notes the designer leaves in the Game Lab (a picture + a notes file per save); only its
+                        README (how to read them) is published
 .claude/skills/new-game/  a pointer for Claude Code to docs/making-games/ (the real playbook)
 UIA.ahk                 NOT included (another project's file): Lib/UIA.ahk of the UIA-v2 project (Descolada, MIT)
                         on GitHub; known to work: 1.1.3. GET-UIA.txt says where to get it and where to put it;
@@ -517,7 +519,7 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
     → `{ along, lift }` (stays put while coiling, springs off fast and slows at the catch; `lift` = off the wall).
     Meant for gaps a climb can't cross (top of the books to an overhanging shelf edge, plant to sill, rock to rock),
     triggered automatically by the game while the players just keep climbing: used by Climb Together since
-    2.12.0 on the bookshelf (books to shelf edge) and plants (to the sill). See it in the creature lab ("leap").
+    2.12.0 on the bookshelf (books to shelf edge) and plants (to the sill). See it in the Game Lab (Chameleon, "Leap").
   - **Skeleton (since 2.9.0):** named joints in `cham.joints`: `body`, `chest` (since 2.15.0: the front half, so
     the body can bend), `head`, `eye.0/1` and `look.0/1` (the eye turrets turn with "look"), `tail.0`-`tail.15`,
     and `leg.0`-`leg.3` `.upper/.lower/.foot` (leg 0 = front left; the front legs hang from the chest). `pose()`
@@ -542,7 +544,7 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
   - **How it's made:** `node tools/chameleon-skeleton.cjs . blender/chameleon-skeleton.json` (if the skeleton
     changes), then in Blender `blender/build_chameleon.py` (shape numbers at its top; works in its own
     "Chameleon" scene, saved as `blender/chameleon.blend`), then `blender/export_chameleon.py` (writes
-    `games/lib/chameleon-model.js`, ~600 KB). Check it in `tools/creature-lab.html`. Without the model file,
+    `games/lib/chameleon-model.js`, ~600 KB). Check it in `tools/Game-Lab.html`. Without the model file,
     or with `{ model: "v1" }`, the old shapes built in code are used.
 - **`HG.Cat()`** (`games/lib/cat.js`): stands on y = 0 facing -z; 1 unit = chest to hips. Controls:
   `mode` stand/walk/sit/crouch/leap (blended), `speed`, `look` -1..1, `hiss` 0..1, `squint` 0..1.
@@ -570,12 +572,12 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
     in Blender `blender/build_cat.py` (shape and colour numbers at its top; its own "Cat" scene, saved as
     `blender/cat.blend`), then `blender/export_cat.py` (writes `games/lib/cat-model.js`, ~650 KB). Without the
     model file, or with `{ model: "v1" }`, the old shapes built in code are used.
-- Try the chameleon, the cat and (since 2.11.0) the crow in `tools/creature-lab.html`
-  (`?who=cat&action=leap&view=side&t=1&ui=0` for screenshots; add `&freeze=1` to hold still at time `t`).
+- Try the chameleon, the cat and the crow in `tools/Game-Lab.html` (`?asset=cat&action=leap&t=1&freeze=1&ui=0` for
+  screenshots; see "Game Lab" below).
 
 ## Crow model (Fly Together's birds; meant for future games too)
 
-- `games/lib/crow.js` (`new HG.Crow({ accent, style })` black with colour accents, as in the bird lab;
+- `games/lib/crow.js` (`new HG.Crow({ accent, style })` black with colour accents (the Game Lab's "Black with colour" look);
   `new HG.Crow({ colour })` solid colour, as in the games), built in code (no model files): wingspan 1 unit,
   proportions from reference photos (kept locally, see `storyboards/crow-model/README.md`): wingspan ≈ 2.2×
   body length, broad inner wing, five separated "finger" primaries, rounded fan tail, heavy beak. Rig:
@@ -585,14 +587,14 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
 - Driven by controls each frame: `crow.controls = { mode: "fly"|"land"|"perch", flap: 0..1, bank: -1..1 }`,
   then `crow.update(dt)`; it eases between them. Since 2.8.0 (for Climb Together's crows), when perched:
   `controls.look` (turn the head to an angle instead of glancing about), `controls.peck` 0..1 (stab down,
-  beak open) and `crow.caw()`; in the bird lab as "Peck" and "Stare". The wingbeat is six key poses read from a four-frame
+  beak open) and `crow.caw()`; in the Game Lab as "Peck" and "Stare". The wingbeat is six key poses read from a four-frame
   reference (the key realism: on the upstroke the wrist folds and the hand trails back). Perched idle:
   quick head turns, an occasional caw. The perched fold angles came from a numeric search that keeps
   every feather inside the body outline.
 - Look: black with a cool blue-purple gloss (strong warm highlights made it look pale from behind);
   player colour on wing leading edges and finger tips (`setStyle`: edges+tips, tips, edges, none).
-- Test it in `tools/bird-lab.html` (actions, views, speed, player colour, model v1/v2, black or solid
-  look; `?action=&view=&t=&ui=0&model=v1&look=solid` for screenshots; `lab.setCamera()` from scripts).
+- Test it in `tools/Game-Lab.html` ("Crow": actions, colour, model v1/v2, black or solid look, speed;
+  `?asset=crow&action=flap&t=1.2&freeze=1&ui=0` for screenshots; `lab.setCamera()` from scripts).
 - **Version 2 (since 2.7.0): the crow's look is made in Blender**; the skeleton and movement are unchanged.
   - **What it is:** a smooth one-piece body/neck/head (a loft, skinned to the body and head joints so
     it bends at the neck), a hooked two-part beak, inset eyes, flight feathers and two rows of covert
@@ -616,12 +618,46 @@ From the storyboards in `storyboards/climb-together/` (its README says what each
     1. Edit the numbers at the top of `build_crow.py`, or sculpt the parts by hand in Blender
        (keep each part's `bone` property).
     2. Run `export_crow.py`.
-    3. Check it in the bird lab.
+    3. Check it in the Game Lab.
   - **If crow.js's skeleton changes:** run `node tools/crow-skeleton.cjs . blender/crow-skeleton.json`
     first, then rebuild.
   - **Blender access:** Blender is driven through the Blender MCP connector, which needs
     `UV_PYTHON=3.13`: its `pywin32` dependency has no Python 3.15 build yet.
 - Speed on the studio laptop: Fly Together runs smoothly (the designer's check, 2026-10-30).
+
+## Game Lab (since 2.29.0)
+
+`tools/Game-Lab.html`, asked for by the designer as part of "how we make games": every 3D piece on its own, both
+whole levels, and a 3D highlighter for saying what should change. It replaced `creature-lab.html` and `bird-lab.html`.
+How the designer uses it is in `docs/making-games/README.md` ("Looking at and marking up 3D pieces").
+- **Layout:** a side menu of assets in groups (Animals; Climb Together: parts; Fly Together: pieces; Whole levels),
+  the view in the middle, and a panel on the right (view buttons, the asset's actions and options, "Go to" places
+  in the whole levels, the highlighter, notes, Save for Claude).
+- **The parts** (in `tools/game-lab/`, loaded with classic script tags like the games): `orbit.js` (drag to turn, scroll
+  to zoom toward the spot under the mouse, right-drag or shift-drag to slide, double-click to look at a spot, W A S D Q E
+  and arrows; three.js's OrbitControls is a module, so this is a small one of its own), `stages.js` (where things are
+  shown), `catalog.js` (the list: one entry per asset; add new pieces there), `marks.js` (the highlighter), `lab.js`
+  (the page, and the address settings: `asset`, `action`, `t`, `freeze`, `ui=0`, `cam=x,y,z,turn,tilt,distance`,
+  `marks=0`).
+- **Three stages:** the *studio* (a plain backdrop: the animals, as in the old labs, and Fly Together's pine, bush,
+  cactus and boulders); *climb* (Climb Together's own scene, `HG.climb3d.get()`, in the game's own light for where
+  the view looks); *fly* (Fly Together's own scene with the whole 3 km canyon built, `buildRange()`). The game scenes
+  are used as they are, through small hooks added for the lab: `f.lookFrom` (the lab's camera), `f.beforeDraw`
+  (e.g. show one part), `f.keepTerrain` (Fly), and names: `tagged()` in climb3d.js labels each part of the climb
+  (`userData.part`: room, shelf, plants, alley, boxes, pipes, windows, roof, crates, rocks, tree, creases, sky; and the
+  tank and valley), and both files name their materials and Fly's shapes, so marks can say what they're on.
+  The lab's canyon is always the same one (made with a fixed seed, `CANYON_SEED` in stages.js), so notes still match.
+- **The highlighter** (`marks.js`): 🖌 Paint (round dabs laid flat on the surface, one shape drawn many times),
+  📍 Pin (numbered, always drawn on top, each with a note), 🧽 Erase; Look to move again (Esc). Animals hold still
+  while marking. Marks are kept per asset in the browser (`localStorage`), with a pink dot in the menu.
+  **Save for Claude** writes `<date>_<time>_<asset>.png` (the view with the marks) and `.json` (the notes: each pin's
+  and the paint's `on`: part, material, shape, the animal's nearest joint and action, copy number, metres down the
+  canyon and ecosystem; positions; the view; a `reopen` link) into a folder picked once (the project's `lab-notes/`,
+  remembered by the browser), or Downloads. **When the designer says they left notes:** read the newest pair in
+  `lab-notes/` (or ask where they saved them), look at the picture, follow `lab-notes/README.md`, and describe back
+  what you understood before changing anything.
+- Tested with the hidden test browser (software drawing): every asset opens without errors; painting, pins, notes and
+  saving work. Not checked on the studio laptop (it's a design tool, meant for any computer with Chrome).
 
 ## Decisions and preferences
 
@@ -740,6 +776,7 @@ were all made in October 2026. The sections above say more about each.
 
 | Version | Date | What changed |
 |---|---|---|
+| 2.29.0 | 2026-11-10 | The Game Lab (`tools/Game-Lab.html`) replaces the creature and bird labs: every 3D piece and both whole levels, a side menu, drag to turn and scroll to zoom, and a 3D highlighter (paint, numbered pins, notes) that saves a picture and a notes file for Claude into `lab-notes/`. Small hooks in climb3d.js and flight3d.js for it (named parts and materials, the lab's camera); the games themselves are unchanged. |
 | 2.28.1 | 2026-11-04 | Brought up to JUMP's project standard: code now under the MIT License (art and docs stay CC BY-SA 4.0); open-source credit footer on the setup and menu screens; one-line `CLAUDE.md`; this History; published on GitHub. Clear help for getting `UIA.ahk` (not included): `GET-UIA.txt`, the README and READ ME FIRST give the link and where to put it, `setup.bat` offers to download it, and the launcher shows a message if it's missing. |
 | 2.28.0 | 2026-10-30 | The menu shows just the two games, each half the screen, with new pictures shot from the new graphics. |
 | 2.27.0-2.27.1 | 2026-10-30 | Fly Together graphics pass: real shadows (reaching 150 m ahead since 2.27.1), ground creases and speckle, sky-coloured bounce light, the river mirroring the sky. Glow shared in `games/lib/glow.js`. |

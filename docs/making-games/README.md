@@ -71,7 +71,7 @@ won't work well, say so and suggest the closest thing that will.
   `Launch` nest start, solo detection) and `games/lib/flight3d.js` (the 3D world).
   Other 3D games can reuse three.js (`js/vendor/three.min.js`, loaded as a global
   `THREE`; r158; no ES modules because the page runs from `file:///`).
-  Birds: reuse the crow in `games/lib/crow.js` (try it in `tools/bird-lab.html`).
+  Birds: reuse the crow in `games/lib/crow.js` (try it in `tools/Game-Lab.html`).
 - Save the storyboard photos in `storyboards/<game-name>/`, named by panel, with a short
   `README.md` saying what each became (see `storyboards/fly-together/`). Concepts made from
   photos we don't own go in `storyboards/<game-name>/unpublished/`, which is never published.
@@ -91,6 +91,10 @@ won't work well, say so and suggest the closest thing that will.
 - Keep everything offline-safe: no new downloads at runtime. If a library is truly
   needed, save it in `js/vendor/` with its licence, and only if its licence is
   compatible with MIT (code) / CC BY-SA 4.0 (art).
+
+- **Add each new 3D piece to the Game Lab** (`tools/game-lab/catalog.js`: one entry each; parts of a level
+  built in code can be labelled with `tagged()`, as in `games/lib/climb3d.js`), so the designer can look at it
+  on its own, turn it, zoom in and mark it up. See "Looking at and marking up 3D pieces" below.
 
 ### 5. Test it with simulated sensors
 
@@ -121,6 +125,25 @@ timeline, prints what happens and saves screenshots. Always:
   which tuning numbers they're most likely to want to adjust.
 - Things only the real setup can confirm (Bluetooth, the launcher, 3D speed on the
   studio laptop, how kids actually move): say so, and ask them to report back.
+
+## Looking at and marking up 3D pieces: the Game Lab
+
+[`tools/Game-Lab.html`](../../tools/Game-Lab.html) (open it in Chrome, straight from the folder) shows every 3D
+piece of the games on its own, and both whole levels, so the designer can look closely and say what should change:
+
+1. **Pick something** in the menu on the left: an animal (with its actions: climb, leap, hiss, flap...), a part of
+   a level (the bookshelf, the giant tree, the stone arch...), or a whole level (with "Go to" buttons for each place).
+2. **Look around:** drag to turn, scroll to zoom (toward the spot under the mouse), right-drag to slide, double-click
+   to look at a spot. The Front / Side / Back / Top buttons and "Start view" put the view back.
+3. **Mark it up:** 🖌 Paint over an area, 📍 Pin an exact spot (each pin has its own note), 🧽 Erase. Write what should
+   change in the notes. Animals hold still while you mark them. Marks are kept per piece (a pink dot in the menu).
+4. **Save for Claude:** a picture of the view with the marks, and a notes file, go into `lab-notes/` (the first save
+   asks for the folder: pick the project's `lab-notes` folder) or into Downloads. Then tell Claude "I left notes".
+
+For whoever acts on the notes: [`lab-notes/README.md`](../../lab-notes/README.md) says how to read them. Each mark says
+what it's on (the level part, its material, the animal's joint, how far down the canyon) and exactly where in 3D, and
+`reopen` opens the same view. Describe back what you understood from the marks before changing anything, as with a
+storyboard.
 
 ## Look and feel
 

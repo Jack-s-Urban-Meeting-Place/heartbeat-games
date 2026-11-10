@@ -250,6 +250,9 @@ HG.flight3d = (function () {
     const boulderGeo = roughen(new THREE.DodecahedronGeometry(1, 1), 0.45, 9);
     const cactusGeo = cactusShape();
     const archMat = new THREE.MeshStandardMaterial({ color: 0xc28b5f, roughness: 1, flatShading: true });
+    // (named, so tools/Game-Lab.html can say what was marked)
+    groundMat.name = "ground"; riverMat.name = "river"; trunkMat.name = "trunk"; plainMat.name = "plants and rocks"; archMat.name = "arch";
+    trunkGeo.name = "pine trunk"; crownGeo.name = "pine tree"; bushGeo.name = "bush"; boulderGeo.name = "boulder"; cactusGeo.name = "cactus";
     return { groundMat, riverMat, trunkGeo, crownGeo, trunkMat, crownMat: plainMat, plainMat, bushGeo, boulderGeo, cactusGeo, archMat };
   }
 
@@ -667,6 +670,16 @@ HG.flight3d = (function () {
       }
     }
 
+    // Build every 60 m section of valley from z0 to z1 metres at once (for tools/Game-Lab.html, which shows the
+    // whole canyon; a round only keeps the stretch round the birds, in updateTerrain).
+    buildRange(z0, z1) {
+      for (let i = Math.floor(z0 / CHUNK); i < Math.ceil(z1 / CHUNK); i++) {
+        if (this.chunks.has(i)) continue;
+        const group = new THREE.Group(), parts = buildChunk(this.world, i, group);
+        this.terrain.add(group); this.chunks.set(i, { group, parts });
+      }
+    }
+
     // How far the camera can zoom in while keeping things within `reach` metres of centre on screen.
     fitZoom(reach, aspect) {
       return BIRD_AHEAD * Math.tan(FOV / 2 * Math.PI / 180) * aspect * 0.72 / Math.max(reach, 0.5);
@@ -682,7 +695,7 @@ HG.flight3d = (function () {
       const size = this.renderer.getSize(new THREE.Vector2());
       if (size.x !== w || size.y !== h) { this.renderer.setSize(w, h, false); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); }
       const world = this.world, birdZ = f.z + BIRD_AHEAD;
-      this.updateTerrain(f.z);
+      if (!f.keepTerrain) this.updateTerrain(f.z);      // (tools/Game-Lab.html builds the whole canyon itself: buildRange)
 
       // ---- Camera: close-up on the nest, pulling back, then following the birds ----
       const zoom = f.zoom || 1, back = BIRD_AHEAD / zoom;
@@ -706,6 +719,8 @@ HG.flight3d = (function () {
       this.camera.up.set(0, 1, 0);
       this.camera.lookAt(target[0], target[1], -target[2]);
       if (f.roll) this.camera.rotateZ(-f.roll);           // the whole view banks when players lean together
+      // (tools/Game-Lab.html looks from its own camera: f.lookFrom = { position, target })
+      if (f.lookFrom) { this.camera.position.copy(f.lookFrom.position); this.camera.lookAt(f.lookFrom.target); }
 
       // Sky, haze, distant ranges and sunlight shift colour with the ecosystem just ahead.
       this.blendSky(f.z + 150);
@@ -755,8 +770,10 @@ HG.flight3d = (function () {
         const shown = f.birds.filter((b) => !b.hidden), mid = shown.length ? shown.reduce((t, b) => t + b.x, 0) / shown.length : f.camX;
         const from = f.view.inNest ? this.nest.seats[0][0] : mid, z = f.view.inNest ? BIRD_AHEAD : birdZ;
         this.sun.target.position.set((from + world.centre(z + SHADOW_AHEAD * 0.6)) / 2, 0, -z);
+        if (f.lookFrom) this.sun.target.position.set(f.lookFrom.target.x, 0, f.lookFrom.target.z + SHADOW_AHEAD * 0.4);   // (shadows round where the lab looks)
         this.sun.position.copy(this.sun.target.position).addScaledVector(this.sunFrom, 200);
       }
+      if (f.beforeDraw) f.beforeDraw(this);               // (tools/Game-Lab.html: e.g. show just one part)
       this.draw();
     }
 
@@ -830,6 +847,8 @@ HG.flight3d = (function () {
     BIRD_HEIGHT,
     // The shared scene, created the first time it's needed.
     get, warmUp,
-    groundAt
+    groundAt,
+    // For tools/Game-Lab.html: the shared shapes and materials, the nest, the arches, and which ecosystem is where.
+    parts() { shared = shared || makeShared(); return { shared, makeNest, buildArch, archesBetween, zoneWeights, CHUNK, ZONE_LENGTH, NEST_HEIGHT }; }
   };
 })();

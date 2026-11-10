@@ -32,14 +32,15 @@ const ORDER = [
   "blender/model_kit.py", "blender/export_model.py", "blender/build_cat.py", "blender/export_cat.py", "tools/cat-skeleton.cjs", "storyboards/cat-model/README.md",
   "games/examples/game-template.js",
   "heartbeat-launcher.ahk", "setup.bat", "setup.ps1",
-  "tools/try-game.mjs", "tools/bird-lab.html", "tools/creature-lab.html", "tools/make-ai-bundle.mjs", "tools/ABOUT-TOOLS.txt"
+  "tools/try-game.mjs", "tools/Game-Lab.html", "tools/game-lab/lab.js", "tools/game-lab/catalog.js", "tools/game-lab/stages.js",
+  "tools/game-lab/orbit.js", "tools/game-lab/marks.js", "lab-notes/README.md", "tools/make-ai-bundle.mjs", "tools/ABOUT-TOOLS.txt"
 ];
 // Never included: generated, private, third-party or too large to be useful.
 const SKIP_DIRS = ["node_modules", "chrome-profile", "test-output", ".git", "unpublished", "references", "archive"];
 const SKIP_FILES = [OUT, "UIA.ahk", "three.min.js", "heartbeat-log.txt", "package.json", "package-lock.json", "CLAUDE.md"];
 // Listed by name only, to keep the bundle small enough for most AI tools: the sensor
 // troubleshooting pages and old helper scripts, and the animals' generated model data.
-const LIST_ONLY = (f) => (/^tools\/.*\.(html|ahk)$/i.test(f) && f !== "tools/bird-lab.html" && f !== "tools/creature-lab.html")
+const LIST_ONLY = (f) => (/^tools\/.*\.(html|ahk)$/i.test(f) && f !== "tools/Game-Lab.html")
   || f === "games/lib/crow-model.js" || f === "blender/crow-skeleton.json"
   || f === "games/lib/chameleon-model.js" || f === "blender/chameleon-skeleton.json"
   || f === "games/lib/cat-model.js" || f === "blender/cat-skeleton.json";

@@ -6,7 +6,7 @@
 // games through the game contract below. Games live in the games/ folder.
 // ============================================================================
 
-const VERSION = "2.28.1";
+const VERSION = "2.29.0";
 const CONFIG = Object.assign({ sensors: { 1: "", 2: "" }, sampleRate: 416, roundSeconds: 30 }, window.HG_CONFIG || {});
 
 // ============================================================================

@@ -1,4 +1,4 @@
-HEARTBEAT GAMES  (version 2.28.1; the version also shows in the corner of the screen)
+HEARTBEAT GAMES  (version 2.29.0; the version also shows in the corner of the screen)
 =================================================================================
 
 FOR THE VOLUNTEER
@@ -34,12 +34,12 @@ WHAT'S IN THE FOLDER
   streamdeck\             pictures for the Stream Deck keys, and how to put them on
   games\lib\flight.js     gameplay shared by the flying games: the valley, wings and nest start
   games\lib\flight3d.js   the 3D world for the flying games: terrain, trees, sky, birds, nest
-  games\lib\crow.js       the crow (the birds), with a real wing skeleton; try it in tools\bird-lab.html
+  games\lib\crow.js       the crow (the birds), with a real wing skeleton; try it in tools\Game-Lab.html
   games\lib\crow-model.js the crow's look, made in Blender (blender\ holds its source; not needed to run)
   games\lib\photo-finish.js  the end-of-round Polaroid photo
   games\lib\glow.js       the soft glow round bright things (used by both 3D games)
   games\lib\climb3d.js    the 3D world for Climb Together: bookshelf, window, alley, rocks, giant tree
-  games\lib\chameleon.js, cat.js, creature-kit.js   the chameleons and the cat; try them (and the crow) in tools\creature-lab.html
+  games\lib\chameleon.js, cat.js, creature-kit.js   the chameleons and the cat; try them in tools\Game-Lab.html
   games\lib\chameleon-model.js, cat-model.js  the chameleons' and the cat's looks, made in Blender (blender\ holds their source; not needed to run)
   games\art\              pictures the games show, e.g. Fly Together's "how to stand" picture
   games\examples\         example games that aren't loaded, handy as templates
