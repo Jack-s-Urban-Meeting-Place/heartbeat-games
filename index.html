@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heartbeat Games: play online</title>
+<!--
+  The front door of the "play online" version (GitHub Pages opens this file first). It opens the games
+  in keyboard mode: keys instead of the wrist sensors, and number keys instead of the Stream Deck.
+  The studio doesn't use this file: its launcher opens heartbeat-games.html, with the sensors.
+-->
+<meta http-equiv="refresh" content="0; url=heartbeat-games.html?keys">
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f3efe8; color: #1f1a24;
+         font: 1.2rem/1.4 "Segoe UI", system-ui, sans-serif; text-align: center; }
+  a { color: #7a4fd6; font-weight: 700; }
+</style>
+</head>
+<body>
+  <p>Opening Heartbeat Games…<br>If nothing happens, <a href="heartbeat-games.html?keys">click here to play</a>.</p>
+  <script>location.replace("heartbeat-games.html?keys");</script>
+</body>
+</html>

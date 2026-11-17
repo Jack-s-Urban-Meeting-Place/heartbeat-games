@@ -92,6 +92,9 @@ won't work well, say so and suggest the closest thing that will.
   needed, save it in `js/vendor/` with its licence, and only if its licence is
   compatible with MIT (code) / CC BY-SA 4.0 (art).
 
+- **Make it playable online too** (keyboard mode, since 2.30.0: see `js/keyboard.js`). Keys pretend to be the sensors, so a
+  game usually just works; give it `keysHowTo` (which keys to press) and `keysArt` (a picture of them, like
+  `games/art/fly-together-keys.svg`), and word any on-screen instructions for keys when `HG.keyboardMode` is true.
 - **Add each new 3D piece to the Game Lab** (`tools/game-lab/catalog.js`: one entry each; parts of a level
   built in code can be labelled with `tagged()`, as in `games/lib/climb3d.js`), so the designer can look at it
   on its own, turn it, zoom in and mark it up. See "Looking at and marking up 3D pieces" below.

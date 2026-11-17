@@ -54,7 +54,7 @@ the games full screen in Chrome; a **Stream Deck MK.2** is the controller. It mu
 be simple enough for a **volunteer** to start: turn on laptop, turn on sensors,
 double-click "Start Heartbeat Games", wait for "All set!".
 
-Current version: **2.29.0** (shown bottom-right on screen; set in `js/app.js`).
+Current version: **2.30.0** (shown bottom-right on screen; set in `js/app.js`).
 
 ## Folder layout
 
@@ -65,7 +65,11 @@ llms.txt                a short index of the project for AI tools
 HEARTBEAT-GAMES-BUNDLE.md  generated: every doc and source file in one text file (tools/make-ai-bundle.mjs)
 LICENSE                 MIT (the code); LICENSE-ART.txt: CC BY-SA 4.0 (storyboards, art, pictures, docs)
 heartbeat-games.html    page layout and styling; loads the scripts below in order
+index.html              the "play online" front door (GitHub Pages opens it): opens heartbeat-games.html?keys
+.nojekyll               tells GitHub Pages to serve the files as they are
+images/                 the README's buttons (play-online-button.svg, download-button.svg)
 config.js               SETTINGS: sensor IDs, sample rate, default round length
+js/keyboard.js          keyboard mode (the "play online" version): keys pretend to be the sensors
 js/sensor.js            Polar Bluetooth connection + accelerometer decoding (proven; change rarely)
 js/app.js               shell: setup screen, menu, controller buttons, reconnection, game runner,
                         and THE GAME CONTRACT (documented at the top of the file)
@@ -197,6 +201,28 @@ missing or throws, the shell shows the plain headline and detail (so `end()` sho
 `ctx`: `stage, players, phase, elapsed, remaining, endRound(), startClock(), state`.
 Player view: `n, name, colour, connected, energy() 0..1, motion() mG, tilt(), up(), latest()`.
 A game that throws is stopped and the menu returns; other games keep working.
+
+## Play online: keyboard mode (since 2.30.0)
+
+The designer wanted the games playable on the web through GitHub Pages:
+**https://jack-s-urban-meeting-place.github.io/heartbeat-games/** (Pages serves the repository's `main` branch from its
+root; `.nojekyll` serves the files as they are). `index.html` opens `heartbeat-games.html?keys`; without `?keys` (or
+`HG_CONFIG.controls = "keyboard"`) the page is the studio version, with sensors, exactly as before.
+- **Keys pretend to be the sensors** (`js/keyboard.js`, `HG.keys`): Player 1 A/D tilt and W climbs, Player 2 ←/→ tilt and ↑
+  climbs (by key position, `e.code`, so other keyboard layouts work). Each player's pretend sensor sends readings like a real
+  one, five at a time every 100 ms at 52 a second, made the way tools/try-game.mjs's simulated sensors make them: a tilt key
+  turns "up" by `TILT_DEGREES` 25 (eased over `TILT_EASE`), and holding climb swings it `CLIMB_SWING` 35° back and forth
+  `CLIMB_RATE` 1.2 times a second with extra jiggle. **So the games aren't changed:** their calibration steps learn the keys
+  (pressing A at "tilt to the left" teaches "left"), who's playing is decided the same way (a player who never presses
+  anything is left out), and all the tuning stays as it is.
+- **Buttons:** the plain number keys stand in for the Stream Deck (app.js turns them into its Ctrl+Alt+Shift keys): 1 and 2
+  open the games, 0 is START, 9 is BACK (Esc too). On-screen words name them (`START_KEY`, `BACK_KEY` in app.js).
+- **No setup screen:** straight to the menu, which shows a card of the keys (`.keys-help`). Games can give `keysHowTo` and
+  `keysArt` (`games/art/*-keys.svg`) for their START screens, and check `HG.keyboardMode` to word instructions for keys
+  (the Fly nest checklist in flight.js, Climb's escape checklist). On a phone or tablet a note says to use a computer.
+- **Tested** by serving the folder over http (like Pages) in the hidden test browser and pressing the keys: both games'
+  starts, flying, steering ("In sync!"), and Climb's whole escape and climbing together, with no errors. Real speed depends on
+  the visitor's computer (the 3D needs a reasonable graphics chip).
 
 ## Getting ready in the background (since 2.26.0)
 
@@ -776,6 +802,7 @@ were all made in October 2026. The sections above say more about each.
 
 | Version | Date | What changed |
 |---|---|---|
+| 2.30.0 | 2026-11-17 | Play online: keyboard mode (`js/keyboard.js`, `index.html`) and GitHub Pages. Keys pretend to be the sensors (P1 A/D/W, P2 ←/→/↑), number keys are the Stream Deck (1, 2 games; 0 Start; 9 Back), key hints and key pictures on screen. README: Play online and To install buttons (`images/`). Credit: Claude Code 2.1.321. |
 | 2.29.0 | 2026-11-10 | The Game Lab (`tools/Game-Lab.html`) replaces the creature and bird labs: every 3D piece and both whole levels, a side menu, drag to turn and scroll to zoom, and a 3D highlighter (paint, numbered pins, notes) that saves a picture and a notes file for Claude into `lab-notes/`. Small hooks in climb3d.js and flight3d.js for it (named parts and materials, the lab's camera); the games themselves are unchanged. |
 | 2.28.1 | 2026-11-04 | Brought up to JUMP's project standard: code now under the MIT License (art and docs stay CC BY-SA 4.0); open-source credit footer on the setup and menu screens; one-line `CLAUDE.md`; this History; published on GitHub. Clear help for getting `UIA.ahk` (not included): `GET-UIA.txt`, the README and READ ME FIRST give the link and where to put it, `setup.bat` offers to download it, and the launcher shows a message if it's missing. |
 | 2.28.0 | 2026-10-30 | The menu shows just the two games, each half the screen, with new pictures shot from the new graphics. |

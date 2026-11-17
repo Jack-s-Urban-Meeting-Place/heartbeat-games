@@ -5,6 +5,33 @@ Big visuals, few words, short rounds, and **cooperation over competition**.
 
 ![Two birds flying up a desert canyon toward a stone arch](games/art/fly-together-menu.jpg)
 
+## Play online
+
+[![Play Heartbeat Games online](images/play-online-button.svg)](https://jack-s-urban-meeting-place.github.io/heartbeat-games/)
+
+Play both games in your web browser on a computer, with no sensors: the keyboard stands in for them.
+
+- **Player 1:** <kbd>A</kbd> and <kbd>D</kbd> tilt, <kbd>W</kbd> climbs. **Player 2:** <kbd>←</kbd> and <kbd>→</kbd> tilt, <kbd>↑</kbd> climbs.
+- <kbd>1</kbd> or <kbd>2</kbd> picks a game, <kbd>0</kbd> starts, <kbd>9</kbd> goes back. <kbd>F11</kbd> for full screen.
+
+Link to share: **https://jack-s-urban-meeting-place.github.io/heartbeat-games/**
+
+## To install
+
+[![Download Heartbeat Games](images/download-button.svg)](https://github.com/Jack-s-Urban-Meeting-Place/heartbeat-games/archive/refs/heads/main.zip)
+
+1. **Click the orange button above.** A zip file called `heartbeat-games-main.zip` (about 12 MB) downloads to
+   your **Downloads** folder.
+2. **Unzip it:**
+   - **Windows:** right-click the zip file, choose **Extract All…**, then click **Extract**.
+   - **Mac:** double-click the zip file.
+3. **To play with the keyboard,** open the new `heartbeat-games-main` folder and double-click **`index.html`**.
+   It opens in your web browser (Chrome or Edge work best). **For the studio, with the sensors,** follow
+   [Getting started](#getting-started) below.
+
+> **Tip:** On Windows, double-clicking a zip only *peeks inside* it. If you open the games from there, they
+> can't find their other files and won't work. Do **Extract All…** first, and keep all the files together in that folder.
+
 ## The games
 
 | Button | Game | Players | How it plays |
@@ -47,6 +74,9 @@ At closing time press **Alt + F4**. This also switches the sensors back to their
 | R | Reconnect a sensor that never connected (staff) |
 | X | Closing time, the same as Alt + F4 (staff) |
 | F9 | Demo mode: simulated sensors |
+
+**Online (keyboard mode):** the plain number keys are the buttons instead: 1 and 2 open the games, 0 is Start, 9 is Back.
+The players' keys stand in for the sensors (see [Play online](#play-online)); `index.html` opens the games this way.
 
 ## How it works
 
@@ -147,7 +177,7 @@ licences, one for code and one for everything else:
   including commercially, as long as you **give credit** to Heartbeat Games and **share what you make
   from them under the same terms**.
 
-Built with Claude Code 2.1.317 (model: Claude Opus 5.5).
+Built with Claude Code 2.1.321 (model: Claude Opus 5.5).
 
 The third-party parts keep their own licences: three.js (MIT, `js/vendor/three-LICENSE.txt`),
 Bricolage Grotesque (SIL Open Font Licence) and UIA-v2 (downloaded separately; see its own licence).

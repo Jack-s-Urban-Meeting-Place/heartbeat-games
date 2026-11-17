@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="56" viewBox="0 0 360 56" role="img" aria-label="Play Heartbeat Games online">
+  <!-- The "Play online" button shown in README.md. It's only a picture; the link around it in the
+       README opens the GitHub Pages site. Colours: the games' purple (Player 2) and cream. -->
+  <title>Play Heartbeat Games online</title>
+  <rect x="1" y="1" width="358" height="54" rx="12" fill="#7a4fd6" stroke="#5b37a8" stroke-width="2"/>
+  <!-- play arrow -->
+  <path d="M25 16 L43 28 L25 40 Z" fill="#f3efe8"/>
+  <text x="56" y="34" fill="#f3efe8" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="19" font-weight="700">Play online: no install</text>
+</svg>

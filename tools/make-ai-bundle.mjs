@@ -24,7 +24,7 @@ const ORDER = [
   "docs/making-games/README.md", "docs/making-games/storyboards.md",
   "docs/making-games/sensor-and-feel.md", "docs/making-games/testing.md",
   "storyboards/fly-together/README.md", "storyboards/climb-together/README.md", "storyboards/crow-model/README.md", "streamdeck/README.txt",
-  "config.js", "heartbeat-games.html", "js/app.js", "js/sensor.js",
+  "config.js", "heartbeat-games.html", "index.html", "js/app.js", "js/keyboard.js", "js/sensor.js",
   "games/fly-together.js", "games/lib/flight.js", "games/lib/flight3d.js", "games/lib/crow.js", "games/lib/photo-finish.js", "games/lib/glow.js",
   "games/climb-together.js", "games/lib/climb3d.js", "games/lib/chameleon.js", "games/lib/cat.js", "games/lib/creature-kit.js",
   "blender/build_crow.py", "blender/export_crow.py", "tools/crow-skeleton.cjs",

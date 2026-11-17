@@ -212,7 +212,11 @@ HG.flight = (function () {
     words() {
       const together = this.decided ? this.activeCount > 1 : this.players.filter((p) => p.connected).length > 1;
       const current = { level: 0, lean: 1, ready: 2, count: 2 }[this.step];
-      const lines = [
+      const lines = HG.keyboardMode ? [                                // (keyboard mode, online: which keys to press)
+        "Hands off the keys…",
+        "Tilt to the left: press A or ⬅",
+        this.step === "count" ? "Get ready… 3, 2, 1" : "Let go… get ready!"
+      ] : [
         together ? "Both of you: hold your wings out" : "Hold your wings out",
         "Tilt to the left ⬅",
         this.step === "count" ? "Get ready… 3, 2, 1" : "Wings level… get ready!"

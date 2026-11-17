@@ -58,6 +58,11 @@
 
   /* ---- Menu ---- */
   #menu { gap: 3vh; }
+  /* Keyboard mode (the "play online" version): the keys card on the menu */
+  .keys-help { display: none; }
+  .keys .keys-help { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem 2.4vw; font-size: clamp(.95rem, 1.6vw, 1.3rem); }
+  .keys-help .who { background: var(--panel); border: 2px solid var(--line); border-radius: 999px; padding: .35rem 1rem; }
+  .keys-help .p1 b { color: var(--p1); } .keys-help .p2 b { color: var(--p2); }
   .tiles { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3vw; align-items: stretch; }
   .tile { border-radius: 28px; padding: 3vh 2vw; color: #fff; display: flex; flex-direction: column; justify-content: space-between;
           background: var(--tile); box-shadow: 0 10px 0 color-mix(in srgb, var(--tile) 65%, #000); }
@@ -172,6 +177,12 @@
     <h1>Pick a game!</h1>
     <p class="sub">Press a number button on the controller.</p>
   </div>
+  <!-- Keyboard mode only (the "play online" version): which keys each player uses -->
+  <div class="keys-help">
+    <div class="who p1"><b>Player 1</b> <span class="key">A</span> <span class="key">D</span> tilt · <span class="key">W</span> climb</div>
+    <div class="who p2"><b>Player 2</b> <span class="key">←</span> <span class="key">→</span> tilt · <span class="key">↑</span> climb</div>
+    <div class="who">Start <span class="key">0</span> · Back <span class="key">9</span> · Full screen <span class="key">F11</span></div>
+  </div>
   <div class="tiles" id="tiles"></div>
   <div class="footer"><div class="chips" id="chips"></div><div class="hint"></div></div>
 </section>
@@ -205,7 +216,7 @@
 <div class="notice" id="notice" role="status"></div>
 <div class="demo-badge">DEMO: simulated sensors</div>
 <div class="version"><span class="credit">Free and open source under the <a href="LICENSE">MIT License</a>
-  · Built with Claude Code 2.1.317 (model: Claude Opus 5.5) · </span><span id="version"></span></div>
+  · Built with Claude Code 2.1.321 (model: Claude Opus 5.5) · </span><span id="version"></span></div>
 <ol id="log"></ol>
 
 <template id="setupCardTemplate">
@@ -224,6 +235,7 @@
 <script src="config.js"></script>
 <script src="js/sensor.js"></script>
 <script src="js/app.js"></script>
+<script src="js/keyboard.js"></script>    <!-- keyboard mode (the "play online" version): keys pretend to be the sensors -->
 
 <!-- Games: one file each. To add a game, put its file in the games folder and add a line here. -->
 <script src="js/vendor/three.min.js"></script>   <!-- the 3D library (three.js r158, MIT licence) -->

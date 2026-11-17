@@ -158,7 +158,9 @@
     icon: "🕊️",
     colour: "#7a4fd6",
     howTo: "Arms out like wings! Tilt to steer!\nFly close together to go faster!\nDon’t bonk the sides.",
+    keysHowTo: "Player 1: A and D tilt your bird.\nPlayer 2: ⬅ and ➡ tilt your bird.\nFly close together to go faster! Don’t bonk the sides.",
     introArt: "games/art/fly-together-pose.svg",   // two players, arms out, sensor on the wrist
+    keysArt: "games/art/fly-together-keys.svg",     // keyboard mode (online): the keys to press
     menuArt: "games/art/fly-together-menu.jpg",    // the two crows flying together, for the menu tile
     fullScreen: true,
     needs: "motion",

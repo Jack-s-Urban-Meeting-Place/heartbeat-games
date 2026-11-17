@@ -6,8 +6,12 @@
 // games through the game contract below. Games live in the games/ folder.
 // ============================================================================
 
-const VERSION = "2.29.0";
+const VERSION = "2.30.0";
 const CONFIG = Object.assign({ sensors: { 1: "", 2: "" }, sampleRate: 416, roundSeconds: 30 }, window.HG_CONFIG || {});
+// Keyboard mode (the "play online" version, since 2.30.0): keys instead of sensors (js/keyboard.js), and number
+// keys instead of the Stream Deck: 1 and 2 open the games, 0 is START, 9 is BACK. On when the address has ?keys.
+const KEYBOARD = new URLSearchParams(location.search).has("keys") || CONFIG.controls === "keyboard";
+const START_KEY = KEYBOARD ? "0" : "START", BACK_KEY = KEYBOARD ? "9" : "BACK";   // (the names shown on screen)
 
 // ============================================================================
 // The game contract
@@ -18,6 +22,7 @@ const CONFIG = Object.assign({ sensors: { 1: "", 2: "" }, sampleRate: 416, round
 //   icon         an emoji for the menu tile
 //   colour       tile colour, e.g. "var(--g1)" or "#ef476f"
 //   howTo        one or two sentences shown before the round starts
+//   keysHowTo    the same, for keyboard mode (which keys to press); keysArt: a picture of those keys
 //   introArt     optional picture shown beside howTo, e.g. how to stand: "games/art/my-game.svg"
 //   menuArt      optional screenshot shown on the game's menu tile, e.g. "games/art/my-game-menu.jpg"
 //   fullScreen   true to play edge to edge: the title, clock and BACK hint shrink into the corners
@@ -59,10 +64,14 @@ const CONFIG = Object.assign({ sensors: { 1: "", 2: "" }, sampleRate: 416, round
 //   p.up()                   [x, y, z]: which way is up for the sensor (length 1)
 //   p.latest()               [x, y, z]: the newest raw reading, in milli-G
 //
+// HG.keyboardMode is true in keyboard mode (the "play online" version), so a game can word its
+// instructions for keys instead of movements.
+//
 // A game that throws an error is stopped and the menu comes back, so a bug in
 // one game can't break connecting or the other games.
 // ============================================================================
 const HG = {
+  keyboardMode: KEYBOARD,
   games: [],
   problems: [],
   registerGame(game) {
@@ -408,17 +417,17 @@ function renderGamePhase() {
   document.getElementById("game").classList.toggle("full", !!(app.game && app.game.fullScreen) && !stage.hidden);
   document.getElementById("gameTimer").textContent = "";
   if (app.phase === "intro") {
-    document.getElementById("gameHowTo").textContent = app.game.howTo;
-    const art = document.getElementById("gameArt");
-    intro.classList.toggle("with-art", !!app.game.introArt);
-    art.hidden = !app.game.introArt;
-    if (app.game.introArt && art.getAttribute("src") !== app.game.introArt) art.src = app.game.introArt;
-    hint.innerHTML = '<span class="key">BACK</span> for the menu';
+    document.getElementById("gameHowTo").textContent = KEYBOARD && app.game.keysHowTo || app.game.howTo;
+    const art = document.getElementById("gameArt"), picture = KEYBOARD && app.game.keysArt || app.game.introArt;
+    intro.classList.toggle("with-art", !!picture);
+    art.hidden = !picture;
+    if (picture && art.getAttribute("src") !== picture) art.src = picture;
+    hint.innerHTML = '<span class="key">' + BACK_KEY + '</span> for the menu';
   } else if (app.phase === "countdown" || app.phase === "playing") {
-    hint.innerHTML = '<span class="key">BACK</span> twice to stop';
+    hint.innerHTML = '<span class="key">' + BACK_KEY + '</span> twice to stop';
   } else if (app.phase === "results") {
     const r = app.result || {};
-    hint.innerHTML = '<span class="key">START</span> to play again · <span class="key">BACK</span> for the menu';
+    hint.innerHTML = '<span class="key">' + START_KEY + '</span> to play again · <span class="key">' + BACK_KEY + '</span> for the menu';
     // The game's own results screen, if it has one.
     const custom = document.getElementById("resultsCustom"), plain = document.getElementById("resultsPlain");
     let own = typeof app.game.showResults === "function";
@@ -485,10 +494,17 @@ function tickGame(now, dt) {
 //   1 to 9  open a game         S  start         B  back
 //   F1/F2   connect a player    F3 pairing done  F4 disconnect both
 //   F9      demo mode (simulated sensors)
+// In keyboard mode (online) the plain number keys are the buttons: 1 and 2 open the games, 0 is START,
+// 9 is BACK (and Esc is BACK too). They're turned into the Stream Deck's keys and handled the same way.
 // ============================================================================
 document.addEventListener("keydown", (e) => {
-  if (!(e.ctrlKey && e.altKey && e.shiftKey)) return;
-  const code = e.code;
+  let code = e.code;
+  if (KEYBOARD && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    const plain = { Digit0: "KeyS", Numpad0: "KeyS", Digit9: "KeyB", Numpad9: "KeyB", Escape: "KeyB" }[code]
+      || (/^(Digit|Numpad)[1-8]$/.test(code) ? "Digit" + code.slice(-1) : null);
+    if (!plain) return;
+    code = plain;
+  } else if (!(e.ctrlKey && e.altKey && e.shiftKey)) return;
   if (code === "F1" || code === "F2") { e.preventDefault(); players[code === "F1" ? 0 : 1].connect(); return; }
   if (code === "F3") {
     e.preventDefault();
@@ -507,7 +523,7 @@ document.addEventListener("keydown", (e) => {
     const game = HG.games.find((g) => g.key === Number(digit[1]));
     if (!game) { if (app.screen === "menu") showNotice("Game " + digit[1] + " is coming soon!", 2500); return; }
     if (app.screen === "game" && (app.phase === "playing" || app.phase === "countdown")) {
-      showNotice("A game is running. Press BACK twice to stop it first.");
+      showNotice("A game is running. Press " + BACK_KEY + " twice to stop it first.");
       return;
     }
     if (app.screen === "setup" && !players.some((p) => p.state === "ready")) return;
@@ -523,7 +539,7 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     if (app.screen === "game" && (app.phase === "playing" || app.phase === "countdown")) {
       if (performance.now() < app.backArmedUntil) { app.backArmedUntil = 0; hideNotice(); stopGame(); show("menu"); }
-      else { app.backArmedUntil = performance.now() + 3000; showNotice("Press BACK again to stop the game."); }
+      else { app.backArmedUntil = performance.now() + 3000; showNotice("Press " + BACK_KEY + " again to stop the game."); }
       return;
     }
     if (app.screen === "game") { stopGame(); show("menu"); return; }
@@ -682,5 +698,17 @@ HG.start = function () {
   updateTitle();
   for (const message of HG.problems) showNotice(message);
   requestAnimationFrame(frame);
+  if (KEYBOARD) startKeyboard();
   warmUpGames();
 };
+
+// Keyboard mode: keys pretend to be the sensors (js/keyboard.js), so there's nothing to connect: straight to the menu,
+// with the words on screen naming the keys.
+function startKeyboard() {
+  document.body.classList.add("keys");
+  HG.keys.start(players);
+  document.querySelectorAll(".key").forEach((k) => { if (k.textContent === "START") k.textContent = START_KEY; });
+  document.querySelector("#menu .sub").textContent = "Press 1 or 2 on your keyboard to pick a game.";
+  show("menu");
+  if (matchMedia("(hover: none)").matches) showNotice("These games are played with a keyboard: try them on a computer.", 12000);
+}

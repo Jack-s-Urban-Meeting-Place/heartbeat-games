@@ -16,6 +16,8 @@ Start with AGENTS.md: it's the project's memory, written for AI assistants and p
 
 ## Code
 
+- [js/keyboard.js](js/keyboard.js): keyboard mode, the "play online" version on GitHub Pages: keys pretend to be the sensors
+- [index.html](index.html): opens the games in keyboard mode (the GitHub Pages front door)
 - [js/app.js](js/app.js): the shell (setup, menu, controller buttons, reconnection, game runner) and the game contract (top of file)
 - [js/sensor.js](js/sensor.js): Polar Verity Sense over Web Bluetooth, fast motion mode, accelerometer decoding
 - [games/fly-together.js](games/fly-together.js): game 1, Fly Together (one or two players, tilt to steer crows down a canyon)

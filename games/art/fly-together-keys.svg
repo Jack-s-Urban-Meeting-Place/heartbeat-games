@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="Segoe UI, system-ui, sans-serif">
+  <!--
+    Fly Together's START screen picture in keyboard mode (the "play online" version): which keys each
+    player presses. Orange = Player 1, purple = Player 2 (their colours on screen); the keys they use are filled in.
+    Made by a one-off script; plain SVG, edit it in any vector app.
+  -->
+  <g>
+    <text x="250" y="58" text-anchor="middle" font-size="34" font-weight="800" fill="#e0662b">Player 1</text>
+    <g transform="translate(250 150)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">W</text>
+    </g>
+    <g transform="translate(146 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#e0662b" stroke="#e0662b" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">A</text>
+    </g>
+    <g transform="translate(250 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">S</text>
+    </g>
+    <g transform="translate(354 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#e0662b" stroke="#e0662b" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">D</text>
+    </g>
+    <text x="250" y="362" text-anchor="middle" font-size="26" fill="#6c6472">A and D tilt your bird</text>
+  </g>
+  <g>
+    <text x="710" y="58" text-anchor="middle" font-size="34" font-weight="800" fill="#7a4fd6">Player 2</text>
+    <g transform="translate(710 150)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">↑</text>
+    </g>
+    <g transform="translate(606 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#7a4fd6" stroke="#7a4fd6" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">←</text>
+    </g>
+    <g transform="translate(710 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">↓</text>
+    </g>
+    <g transform="translate(814 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#7a4fd6" stroke="#7a4fd6" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">→</text>
+    </g>
+    <text x="710" y="362" text-anchor="middle" font-size="26" fill="#6c6472">← and → tilt your bird</text>
+  </g>
+  <text x="480" y="420" text-anchor="middle" font-size="24" fill="#6c6472">fly close together to go faster</text>
+</svg>

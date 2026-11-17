@@ -1,6 +1,6 @@
 # Heartbeat Games: the whole project in one file
 
-Version 2.29.0, bundled 2026-11-10 by `tools/make-ai-bundle.mjs`.
+Version 2.30.0, bundled 2026-11-17 by `tools/make-ai-bundle.mjs`.
 This is a snapshot for AI tools and readers: if it disagrees with the real files, the real files win.
 Start with AGENTS.md (the first file below). Each file appears under a heading with its path.
 
@@ -20,7 +20,9 @@ Start with AGENTS.md (the first file below). Each file appears under a heading w
 - streamdeck/README.txt
 - config.js
 - heartbeat-games.html
+- index.html
 - js/app.js
+- js/keyboard.js
 - js/sensor.js
 - games/fly-together.js
 - games/lib/flight.js
@@ -62,12 +64,16 @@ Start with AGENTS.md (the first file below). Each file appears under a heading w
 - tools/ABOUT-TOOLS.txt
 - .claude/skills/new-game/SKILL.md
 - GET-UIA.txt
+- games/art/climb-together-keys.svg
 - games/art/climb-together-pose.svg
+- games/art/fly-together-keys.svg
 - games/art/fly-together-pose.svg
 - games/examples/energy-bars.js
 - games/examples/freeze.js
 - games/examples/tilt-zone.js
 - games/examples/valley-flight.js
+- images/download-button.svg
+- images/play-online-button.svg
 
 ## Not included as text
 
@@ -138,7 +144,7 @@ the games full screen in Chrome; a **Stream Deck MK.2** is the controller. It mu
 be simple enough for a **volunteer** to start: turn on laptop, turn on sensors,
 double-click "Start Heartbeat Games", wait for "All set!".
 
-Current version: **2.29.0** (shown bottom-right on screen; set in `js/app.js`).
+Current version: **2.30.0** (shown bottom-right on screen; set in `js/app.js`).
 
 ## Folder layout
 
@@ -149,7 +155,11 @@ llms.txt                a short index of the project for AI tools
 HEARTBEAT-GAMES-BUNDLE.md  generated: every doc and source file in one text file (tools/make-ai-bundle.mjs)
 LICENSE                 MIT (the code); LICENSE-ART.txt: CC BY-SA 4.0 (storyboards, art, pictures, docs)
 heartbeat-games.html    page layout and styling; loads the scripts below in order
+index.html              the "play online" front door (GitHub Pages opens it): opens heartbeat-games.html?keys
+.nojekyll               tells GitHub Pages to serve the files as they are
+images/                 the README's buttons (play-online-button.svg, download-button.svg)
 config.js               SETTINGS: sensor IDs, sample rate, default round length
+js/keyboard.js          keyboard mode (the "play online" version): keys pretend to be the sensors
 js/sensor.js            Polar Bluetooth connection + accelerometer decoding (proven; change rarely)
 js/app.js               shell: setup screen, menu, controller buttons, reconnection, game runner,
                         and THE GAME CONTRACT (documented at the top of the file)
@@ -281,6 +291,28 @@ missing or throws, the shell shows the plain headline and detail (so `end()` sho
 `ctx`: `stage, players, phase, elapsed, remaining, endRound(), startClock(), state`.
 Player view: `n, name, colour, connected, energy() 0..1, motion() mG, tilt(), up(), latest()`.
 A game that throws is stopped and the menu returns; other games keep working.
+
+## Play online: keyboard mode (since 2.30.0)
+
+The designer wanted the games playable on the web through GitHub Pages:
+**https://jack-s-urban-meeting-place.github.io/heartbeat-games/** (Pages serves the repository's `main` branch from its
+root; `.nojekyll` serves the files as they are). `index.html` opens `heartbeat-games.html?keys`; without `?keys` (or
+`HG_CONFIG.controls = "keyboard"`) the page is the studio version, with sensors, exactly as before.
+- **Keys pretend to be the sensors** (`js/keyboard.js`, `HG.keys`): Player 1 A/D tilt and W climbs, Player 2 ←/→ tilt and ↑
+  climbs (by key position, `e.code`, so other keyboard layouts work). Each player's pretend sensor sends readings like a real
+  one, five at a time every 100 ms at 52 a second, made the way tools/try-game.mjs's simulated sensors make them: a tilt key
+  turns "up" by `TILT_DEGREES` 25 (eased over `TILT_EASE`), and holding climb swings it `CLIMB_SWING` 35° back and forth
+  `CLIMB_RATE` 1.2 times a second with extra jiggle. **So the games aren't changed:** their calibration steps learn the keys
+  (pressing A at "tilt to the left" teaches "left"), who's playing is decided the same way (a player who never presses
+  anything is left out), and all the tuning stays as it is.
+- **Buttons:** the plain number keys stand in for the Stream Deck (app.js turns them into its Ctrl+Alt+Shift keys): 1 and 2
+  open the games, 0 is START, 9 is BACK (Esc too). On-screen words name them (`START_KEY`, `BACK_KEY` in app.js).
+- **No setup screen:** straight to the menu, which shows a card of the keys (`.keys-help`). Games can give `keysHowTo` and
+  `keysArt` (`games/art/*-keys.svg`) for their START screens, and check `HG.keyboardMode` to word instructions for keys
+  (the Fly nest checklist in flight.js, Climb's escape checklist). On a phone or tablet a note says to use a computer.
+- **Tested** by serving the folder over http (like Pages) in the hidden test browser and pressing the keys: both games'
+  starts, flying, steering ("In sync!"), and Climb's whole escape and climbing together, with no errors. Real speed depends on
+  the visitor's computer (the 3D needs a reasonable graphics chip).
 
 ## Getting ready in the background (since 2.26.0)
 
@@ -860,6 +892,7 @@ were all made in October 2026. The sections above say more about each.
 
 | Version | Date | What changed |
 |---|---|---|
+| 2.30.0 | 2026-11-17 | Play online: keyboard mode (`js/keyboard.js`, `index.html`) and GitHub Pages. Keys pretend to be the sensors (P1 A/D/W, P2 ←/→/↑), number keys are the Stream Deck (1, 2 games; 0 Start; 9 Back), key hints and key pictures on screen. README: Play online and To install buttons (`images/`). Credit: Claude Code 2.1.321. |
 | 2.29.0 | 2026-11-10 | The Game Lab (`tools/Game-Lab.html`) replaces the creature and bird labs: every 3D piece and both whole levels, a side menu, drag to turn and scroll to zoom, and a 3D highlighter (paint, numbered pins, notes) that saves a picture and a notes file for Claude into `lab-notes/`. Small hooks in climb3d.js and flight3d.js for it (named parts and materials, the lab's camera); the games themselves are unchanged. |
 | 2.28.1 | 2026-11-04 | Brought up to JUMP's project standard: code now under the MIT License (art and docs stay CC BY-SA 4.0); open-source credit footer on the setup and menu screens; one-line `CLAUDE.md`; this History; published on GitHub. Clear help for getting `UIA.ahk` (not included): `GET-UIA.txt`, the README and READ ME FIRST give the link and where to put it, `setup.bat` offers to download it, and the launcher shows a message if it's missing. |
 | 2.28.0 | 2026-10-30 | The menu shows just the two games, each half the screen, with new pictures shot from the new graphics. |
@@ -886,6 +919,33 @@ Players wear a small optical sensor on their wrists, and their movement controls
 Big visuals, few words, short rounds, and **cooperation over competition**.
 
 ![Two birds flying up a desert canyon toward a stone arch](games/art/fly-together-menu.jpg)
+
+## Play online
+
+[![Play Heartbeat Games online](images/play-online-button.svg)](https://jack-s-urban-meeting-place.github.io/heartbeat-games/)
+
+Play both games in your web browser on a computer, with no sensors: the keyboard stands in for them.
+
+- **Player 1:** <kbd>A</kbd> and <kbd>D</kbd> tilt, <kbd>W</kbd> climbs. **Player 2:** <kbd>←</kbd> and <kbd>→</kbd> tilt, <kbd>↑</kbd> climbs.
+- <kbd>1</kbd> or <kbd>2</kbd> picks a game, <kbd>0</kbd> starts, <kbd>9</kbd> goes back. <kbd>F11</kbd> for full screen.
+
+Link to share: **https://jack-s-urban-meeting-place.github.io/heartbeat-games/**
+
+## To install
+
+[![Download Heartbeat Games](images/download-button.svg)](https://github.com/Jack-s-Urban-Meeting-Place/heartbeat-games/archive/refs/heads/main.zip)
+
+1. **Click the orange button above.** A zip file called `heartbeat-games-main.zip` (about 12 MB) downloads to
+   your **Downloads** folder.
+2. **Unzip it:**
+   - **Windows:** right-click the zip file, choose **Extract All…**, then click **Extract**.
+   - **Mac:** double-click the zip file.
+3. **To play with the keyboard,** open the new `heartbeat-games-main` folder and double-click **`index.html`**.
+   It opens in your web browser (Chrome or Edge work best). **For the studio, with the sensors,** follow
+   [Getting started](#getting-started) below.
+
+> **Tip:** On Windows, double-clicking a zip only *peeks inside* it. If you open the games from there, they
+> can't find their other files and won't work. Do **Extract All…** first, and keep all the files together in that folder.
 
 ## The games
 
@@ -929,6 +989,9 @@ At closing time press **Alt + F4**. This also switches the sensors back to their
 | R | Reconnect a sensor that never connected (staff) |
 | X | Closing time, the same as Alt + F4 (staff) |
 | F9 | Demo mode: simulated sensors |
+
+**Online (keyboard mode):** the plain number keys are the buttons instead: 1 and 2 open the games, 0 is Start, 9 is Back.
+The players' keys stand in for the sensors (see [Play online](#play-online)); `index.html` opens the games this way.
 
 ## How it works
 
@@ -1029,7 +1092,7 @@ licences, one for code and one for everything else:
   including commercially, as long as you **give credit** to Heartbeat Games and **share what you make
   from them under the same terms**.
 
-Built with Claude Code 2.1.317 (model: Claude Opus 5.5).
+Built with Claude Code 2.1.321 (model: Claude Opus 5.5).
 
 The third-party parts keep their own licences: three.js (MIT, `js/vendor/three-LICENSE.txt`),
 Bricolage Grotesque (SIL Open Font Licence) and UIA-v2 (downloaded separately; see its own licence).
@@ -1040,7 +1103,7 @@ Bricolage Grotesque (SIL Open Font Licence) and UIA-v2 (downloaded separately; s
 ## File: READ ME FIRST.txt
 
 ```text
-HEARTBEAT GAMES  (version 2.29.0; the version also shows in the corner of the screen)
+HEARTBEAT GAMES  (version 2.30.0; the version also shows in the corner of the screen)
 =================================================================================
 
 FOR THE VOLUNTEER
@@ -1065,6 +1128,8 @@ INSTALLING ON A NEW LAPTOP (once)
 
 WHAT'S IN THE FOLDER
   heartbeat-games.html    the games page (layout and styling)
+  index.html              the "play online" version: the same games played with the keyboard, no sensors
+                            (also on the web: https://jack-s-urban-meeting-place.github.io/heartbeat-games/)
   config.js               SETTINGS: sensor IDs, sample rate, round length
   js\sensor.js            connecting to the sensors (proven; change rarely)
   js\app.js               the shell: setup, menu, buttons, reconnecting, game runner
@@ -1142,6 +1207,8 @@ Start with AGENTS.md: it's the project's memory, written for AI assistants and p
 
 ## Code
 
+- [js/keyboard.js](js/keyboard.js): keyboard mode, the "play online" version on GitHub Pages: keys pretend to be the sensors
+- [index.html](index.html): opens the games in keyboard mode (the GitHub Pages front door)
 - [js/app.js](js/app.js): the shell (setup, menu, controller buttons, reconnection, game runner) and the game contract (top of file)
 - [js/sensor.js](js/sensor.js): Polar Verity Sense over Web Bluetooth, fast motion mode, accelerometer decoding
 - [games/fly-together.js](games/fly-together.js): game 1, Fly Together (one or two players, tilt to steer crows down a canyon)
@@ -1269,6 +1336,9 @@ won't work well, say so and suggest the closest thing that will.
   needed, save it in `js/vendor/` with its licence, and only if its licence is
   compatible with MIT (code) / CC BY-SA 4.0 (art).
 
+- **Make it playable online too** (keyboard mode, since 2.30.0: see `js/keyboard.js`). Keys pretend to be the sensors, so a
+  game usually just works; give it `keysHowTo` (which keys to press) and `keysArt` (a picture of them, like
+  `games/art/fly-together-keys.svg`), and word any on-screen instructions for keys when `HG.keyboardMode` is true.
 - **Add each new 3D piece to the Game Lab** (`tools/game-lab/catalog.js`: one entry each; parts of a level
   built in code can be labelled with `tagged()`, as in `games/lib/climb3d.js`), so the designer can look at it
   on its own, turn it, zoom in and mark it up. See "Looking at and marking up 3D pieces" below.
@@ -1829,6 +1899,11 @@ window.HG_CONFIG = {
 
   /* ---- Menu ---- */
   #menu { gap: 3vh; }
+  /* Keyboard mode (the "play online" version): the keys card on the menu */
+  .keys-help { display: none; }
+  .keys .keys-help { display: flex; flex-wrap: wrap; justify-content: center; gap: .6rem 2.4vw; font-size: clamp(.95rem, 1.6vw, 1.3rem); }
+  .keys-help .who { background: var(--panel); border: 2px solid var(--line); border-radius: 999px; padding: .35rem 1rem; }
+  .keys-help .p1 b { color: var(--p1); } .keys-help .p2 b { color: var(--p2); }
   .tiles { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3vw; align-items: stretch; }
   .tile { border-radius: 28px; padding: 3vh 2vw; color: #fff; display: flex; flex-direction: column; justify-content: space-between;
           background: var(--tile); box-shadow: 0 10px 0 color-mix(in srgb, var(--tile) 65%, #000); }
@@ -1943,6 +2018,12 @@ window.HG_CONFIG = {
     <h1>Pick a game!</h1>
     <p class="sub">Press a number button on the controller.</p>
   </div>
+  <!-- Keyboard mode only (the "play online" version): which keys each player uses -->
+  <div class="keys-help">
+    <div class="who p1"><b>Player 1</b> <span class="key">A</span> <span class="key">D</span> tilt · <span class="key">W</span> climb</div>
+    <div class="who p2"><b>Player 2</b> <span class="key">←</span> <span class="key">→</span> tilt · <span class="key">↑</span> climb</div>
+    <div class="who">Start <span class="key">0</span> · Back <span class="key">9</span> · Full screen <span class="key">F11</span></div>
+  </div>
   <div class="tiles" id="tiles"></div>
   <div class="footer"><div class="chips" id="chips"></div><div class="hint"></div></div>
 </section>
@@ -1976,7 +2057,7 @@ window.HG_CONFIG = {
 <div class="notice" id="notice" role="status"></div>
 <div class="demo-badge">DEMO: simulated sensors</div>
 <div class="version"><span class="credit">Free and open source under the <a href="LICENSE">MIT License</a>
-  · Built with Claude Code 2.1.317 (model: Claude Opus 5.5) · </span><span id="version"></span></div>
+  · Built with Claude Code 2.1.321 (model: Claude Opus 5.5) · </span><span id="version"></span></div>
 <ol id="log"></ol>
 
 <template id="setupCardTemplate">
@@ -1995,6 +2076,7 @@ window.HG_CONFIG = {
 <script src="config.js"></script>
 <script src="js/sensor.js"></script>
 <script src="js/app.js"></script>
+<script src="js/keyboard.js"></script>    <!-- keyboard mode (the "play online" version): keys pretend to be the sensors -->
 
 <!-- Games: one file each. To add a game, put its file in the games folder and add a line here. -->
 <script src="js/vendor/three.min.js"></script>   <!-- the 3D library (three.js r158, MIT licence) -->
@@ -2022,6 +2104,36 @@ window.HG_CONFIG = {
 
 ---
 
+## File: index.html
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heartbeat Games: play online</title>
+<!--
+  The front door of the "play online" version (GitHub Pages opens this file first). It opens the games
+  in keyboard mode: keys instead of the wrist sensors, and number keys instead of the Stream Deck.
+  The studio doesn't use this file: its launcher opens heartbeat-games.html, with the sensors.
+-->
+<meta http-equiv="refresh" content="0; url=heartbeat-games.html?keys">
+<style>
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f3efe8; color: #1f1a24;
+         font: 1.2rem/1.4 "Segoe UI", system-ui, sans-serif; text-align: center; }
+  a { color: #7a4fd6; font-weight: 700; }
+</style>
+</head>
+<body>
+  <p>Opening Heartbeat Games…<br>If nothing happens, <a href="heartbeat-games.html?keys">click here to play</a>.</p>
+  <script>location.replace("heartbeat-games.html?keys");</script>
+</body>
+</html>
+```
+
+---
+
 ## File: js/app.js
 
 ```js
@@ -2033,8 +2145,12 @@ window.HG_CONFIG = {
 // games through the game contract below. Games live in the games/ folder.
 // ============================================================================
 
-const VERSION = "2.29.0";
+const VERSION = "2.30.0";
 const CONFIG = Object.assign({ sensors: { 1: "", 2: "" }, sampleRate: 416, roundSeconds: 30 }, window.HG_CONFIG || {});
+// Keyboard mode (the "play online" version, since 2.30.0): keys instead of sensors (js/keyboard.js), and number
+// keys instead of the Stream Deck: 1 and 2 open the games, 0 is START, 9 is BACK. On when the address has ?keys.
+const KEYBOARD = new URLSearchParams(location.search).has("keys") || CONFIG.controls === "keyboard";
+const START_KEY = KEYBOARD ? "0" : "START", BACK_KEY = KEYBOARD ? "9" : "BACK";   // (the names shown on screen)
 
 // ============================================================================
 // The game contract
@@ -2045,6 +2161,7 @@ const CONFIG = Object.assign({ sensors: { 1: "", 2: "" }, sampleRate: 416, round
 //   icon         an emoji for the menu tile
 //   colour       tile colour, e.g. "var(--g1)" or "#ef476f"
 //   howTo        one or two sentences shown before the round starts
+//   keysHowTo    the same, for keyboard mode (which keys to press); keysArt: a picture of those keys
 //   introArt     optional picture shown beside howTo, e.g. how to stand: "games/art/my-game.svg"
 //   menuArt      optional screenshot shown on the game's menu tile, e.g. "games/art/my-game-menu.jpg"
 //   fullScreen   true to play edge to edge: the title, clock and BACK hint shrink into the corners
@@ -2086,10 +2203,14 @@ const CONFIG = Object.assign({ sensors: { 1: "", 2: "" }, sampleRate: 416, round
 //   p.up()                   [x, y, z]: which way is up for the sensor (length 1)
 //   p.latest()               [x, y, z]: the newest raw reading, in milli-G
 //
+// HG.keyboardMode is true in keyboard mode (the "play online" version), so a game can word its
+// instructions for keys instead of movements.
+//
 // A game that throws an error is stopped and the menu comes back, so a bug in
 // one game can't break connecting or the other games.
 // ============================================================================
 const HG = {
+  keyboardMode: KEYBOARD,
   games: [],
   problems: [],
   registerGame(game) {
@@ -2435,17 +2556,17 @@ function renderGamePhase() {
   document.getElementById("game").classList.toggle("full", !!(app.game && app.game.fullScreen) && !stage.hidden);
   document.getElementById("gameTimer").textContent = "";
   if (app.phase === "intro") {
-    document.getElementById("gameHowTo").textContent = app.game.howTo;
-    const art = document.getElementById("gameArt");
-    intro.classList.toggle("with-art", !!app.game.introArt);
-    art.hidden = !app.game.introArt;
-    if (app.game.introArt && art.getAttribute("src") !== app.game.introArt) art.src = app.game.introArt;
-    hint.innerHTML = '<span class="key">BACK</span> for the menu';
+    document.getElementById("gameHowTo").textContent = KEYBOARD && app.game.keysHowTo || app.game.howTo;
+    const art = document.getElementById("gameArt"), picture = KEYBOARD && app.game.keysArt || app.game.introArt;
+    intro.classList.toggle("with-art", !!picture);
+    art.hidden = !picture;
+    if (picture && art.getAttribute("src") !== picture) art.src = picture;
+    hint.innerHTML = '<span class="key">' + BACK_KEY + '</span> for the menu';
   } else if (app.phase === "countdown" || app.phase === "playing") {
-    hint.innerHTML = '<span class="key">BACK</span> twice to stop';
+    hint.innerHTML = '<span class="key">' + BACK_KEY + '</span> twice to stop';
   } else if (app.phase === "results") {
     const r = app.result || {};
-    hint.innerHTML = '<span class="key">START</span> to play again · <span class="key">BACK</span> for the menu';
+    hint.innerHTML = '<span class="key">' + START_KEY + '</span> to play again · <span class="key">' + BACK_KEY + '</span> for the menu';
     // The game's own results screen, if it has one.
     const custom = document.getElementById("resultsCustom"), plain = document.getElementById("resultsPlain");
     let own = typeof app.game.showResults === "function";
@@ -2512,10 +2633,17 @@ function tickGame(now, dt) {
 //   1 to 9  open a game         S  start         B  back
 //   F1/F2   connect a player    F3 pairing done  F4 disconnect both
 //   F9      demo mode (simulated sensors)
+// In keyboard mode (online) the plain number keys are the buttons: 1 and 2 open the games, 0 is START,
+// 9 is BACK (and Esc is BACK too). They're turned into the Stream Deck's keys and handled the same way.
 // ============================================================================
 document.addEventListener("keydown", (e) => {
-  if (!(e.ctrlKey && e.altKey && e.shiftKey)) return;
-  const code = e.code;
+  let code = e.code;
+  if (KEYBOARD && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    const plain = { Digit0: "KeyS", Numpad0: "KeyS", Digit9: "KeyB", Numpad9: "KeyB", Escape: "KeyB" }[code]
+      || (/^(Digit|Numpad)[1-8]$/.test(code) ? "Digit" + code.slice(-1) : null);
+    if (!plain) return;
+    code = plain;
+  } else if (!(e.ctrlKey && e.altKey && e.shiftKey)) return;
   if (code === "F1" || code === "F2") { e.preventDefault(); players[code === "F1" ? 0 : 1].connect(); return; }
   if (code === "F3") {
     e.preventDefault();
@@ -2534,7 +2662,7 @@ document.addEventListener("keydown", (e) => {
     const game = HG.games.find((g) => g.key === Number(digit[1]));
     if (!game) { if (app.screen === "menu") showNotice("Game " + digit[1] + " is coming soon!", 2500); return; }
     if (app.screen === "game" && (app.phase === "playing" || app.phase === "countdown")) {
-      showNotice("A game is running. Press BACK twice to stop it first.");
+      showNotice("A game is running. Press " + BACK_KEY + " twice to stop it first.");
       return;
     }
     if (app.screen === "setup" && !players.some((p) => p.state === "ready")) return;
@@ -2550,7 +2678,7 @@ document.addEventListener("keydown", (e) => {
     e.preventDefault();
     if (app.screen === "game" && (app.phase === "playing" || app.phase === "countdown")) {
       if (performance.now() < app.backArmedUntil) { app.backArmedUntil = 0; hideNotice(); stopGame(); show("menu"); }
-      else { app.backArmedUntil = performance.now() + 3000; showNotice("Press BACK again to stop the game."); }
+      else { app.backArmedUntil = performance.now() + 3000; showNotice("Press " + BACK_KEY + " again to stop the game."); }
       return;
     }
     if (app.screen === "game") { stopGame(); show("menu"); return; }
@@ -2709,8 +2837,92 @@ HG.start = function () {
   updateTitle();
   for (const message of HG.problems) showNotice(message);
   requestAnimationFrame(frame);
+  if (KEYBOARD) startKeyboard();
   warmUpGames();
 };
+
+// Keyboard mode: keys pretend to be the sensors (js/keyboard.js), so there's nothing to connect: straight to the menu,
+// with the words on screen naming the keys.
+function startKeyboard() {
+  document.body.classList.add("keys");
+  HG.keys.start(players);
+  document.querySelectorAll(".key").forEach((k) => { if (k.textContent === "START") k.textContent = START_KEY; });
+  document.querySelector("#menu .sub").textContent = "Press 1 or 2 on your keyboard to pick a game.";
+  show("menu");
+  if (matchMedia("(hover: none)").matches) showNotice("These games are played with a keyboard: try them on a computer.", 12000);
+}
+```
+
+---
+
+## File: js/keyboard.js
+
+```js
+// ============================================================================
+// keyboard.js: playing with the keyboard instead of sensors (the "play online" version)
+// ----------------------------------------------------------------------------
+// Online (GitHub Pages) nobody has the wrist sensors, so each player's keys pretend to be a sensor:
+//   Player 1:  A / D  tilt left / right       W  climb
+//   Player 2:  ← / →  tilt left / right       ↑  climb
+// The pretend sensor sends the same kind of readings a real one would (as tools/try-game.mjs does in
+// tests): tilting turns its "up" direction; climbing swings it back and forth like a climbing arm.
+// So the games, their calibration steps and their tuning work exactly as with real sensors.
+// The controller buttons are number keys in this mode: 1 and 2 open the games, 0 is START, 9 is BACK
+// (see js/app.js). Keyboard mode is on when the page's address has ?keys (index.html adds it).
+// ============================================================================
+
+HG.keys = (function () {
+  // ---- Tuning ----
+  const TILT_DEGREES = 25;      // how far a key tilts the pretend sensor (the games learn this as "left" when you press it)
+  const TILT_EASE = 0.15;       // seconds to tilt over: a little softer than instant
+  const CLIMB_SWING = 35;       // degrees the pretend arm swings forward and back while climbing...
+  const CLIMB_RATE = 1.2;       // ...this many times a second
+  const SHAKE = 250;            // extra jiggle while climbing (milli-G), as a real climbing arm has
+  const NOISE = 20;             // a real sensor's small, constant jiggle (milli-G)
+  const SAMPLE_RATE = 52;       // readings a second (sent 5 at a time, every 100 ms, like a real sensor's packets)
+
+  // Which keys each player uses (by position on the keyboard, so other keyboard layouts work too).
+  const KEYS = {
+    1: { left: "KeyA", right: "KeyD", climb: "KeyW" },
+    2: { left: "ArrowLeft", right: "ArrowRight", climb: "ArrowUp" }
+  };
+  const down = new Set();
+  const allKeys = new Set(Object.values(KEYS).flatMap((k) => Object.values(k)).concat(["KeyS", "ArrowDown"]));
+
+  function start(players) {
+    addEventListener("keydown", (e) => {
+      if (!allKeys.has(e.code) || e.ctrlKey || e.altKey || e.metaKey) return;
+      e.preventDefault();                                            // (the arrow keys would scroll the page)
+      down.add(e.code);
+    });
+    addEventListener("keyup", (e) => down.delete(e.code));
+    addEventListener("blur", () => down.clear());                    // (a key let go in another window)
+    for (const p of players) pretendSensor(p, KEYS[p.n]);
+  }
+
+  // One player's pretend sensor: every 100 ms, five readings, like a real one.
+  function pretendSensor(player, keys) {
+    player.rate = SAMPLE_RATE; player.setStep("ready"); player.setState("ready");
+    let tilt = 0, swing = 0;
+    const step = 1 / SAMPLE_RATE;
+    setInterval(() => {
+      const target = (down.has(keys.left) ? TILT_DEGREES : 0) - (down.has(keys.right) ? TILT_DEGREES : 0);
+      const climbing = down.has(keys.climb);
+      const samples = [];
+      for (let i = 0; i < 5; i++) {
+        tilt += (target - tilt) * Math.min(1, step / TILT_EASE);
+        swing = climbing ? swing + step : 0;
+        const r = tilt * Math.PI / 180;
+        const p = climbing ? CLIMB_SWING * Math.PI / 180 * (0.5 + 0.5 * Math.sin(swing * 2 * Math.PI * CLIMB_RATE)) : 0;
+        const jiggle = () => (Math.random() - 0.5) * (NOISE + (climbing ? SHAKE : 0));
+        samples.push([1000 * Math.sin(p) + jiggle(), 1000 * Math.cos(p) * Math.sin(r) + jiggle(), 1000 * Math.cos(p) * Math.cos(r) + jiggle()]);
+      }
+      player.addSamples(samples);
+    }, 100);
+  }
+
+  return { start, KEYS };
+})();
 ```
 
 ---
@@ -3203,7 +3415,9 @@ class PolarSensor {
     icon: "🕊️",
     colour: "#7a4fd6",
     howTo: "Arms out like wings! Tilt to steer!\nFly close together to go faster!\nDon’t bonk the sides.",
+    keysHowTo: "Player 1: A and D tilt your bird.\nPlayer 2: ⬅ and ➡ tilt your bird.\nFly close together to go faster! Don’t bonk the sides.",
     introArt: "games/art/fly-together-pose.svg",   // two players, arms out, sensor on the wrist
+    keysArt: "games/art/fly-together-keys.svg",     // keyboard mode (online): the keys to press
     menuArt: "games/art/fly-together-menu.jpg",    // the two crows flying together, for the menu tile
     fullScreen: true,
     needs: "motion",
@@ -3650,7 +3864,11 @@ HG.flight = (function () {
     words() {
       const together = this.decided ? this.activeCount > 1 : this.players.filter((p) => p.connected).length > 1;
       const current = { level: 0, lean: 1, ready: 2, count: 2 }[this.step];
-      const lines = [
+      const lines = HG.keyboardMode ? [                                // (keyboard mode, online: which keys to press)
+        "Hands off the keys…",
+        "Tilt to the left: press A or ⬅",
+        this.step === "count" ? "Get ready… 3, 2, 1" : "Let go… get ready!"
+      ] : [
         together ? "Both of you: hold your wings out" : "Hold your wings out",
         "Tilt to the left ⬅",
         this.step === "count" ? "Get ready… 3, 2, 1" : "Wings level… get ready!"
@@ -5707,7 +5925,9 @@ HG.glow = (function () {
     words() {
       const together = this.decided ? this.activeCount > 1 : this.players.filter((p) => p.connected).length > 1;
       const current = { hands: 0, climb: 1, left: 2, right: 3, freeze: 4 }[this.step];
-      const lines = [together ? "Both of you: hands up, hold still ✋" : "Hands up, hold still ✋", "Climb on the spot! 🧗", "Climb to the left ⬅", "Climb to the right ➡", "Freeze! 🧊"];
+      const lines = HG.keyboardMode                                    // (keyboard mode, online: which keys to press)
+        ? ["Hands off the keys ✋", "Climb: hold W or ⬆ 🧗", "Climb left: W + A, or ⬆ + ⬅", "Climb right: W + D, or ⬆ + ➡", "Freeze! Let go 🧊"]
+        : [together ? "Both of you: hands up, hold still ✋" : "Hands up, hold still ✋", "Climb on the spot! 🧗", "Climb to the left ⬅", "Climb to the right ➡", "Freeze! 🧊"];
       let list = "";
       if (current !== undefined) {
         list = lines.map((text, i) => {
@@ -5845,7 +6065,9 @@ HG.glow = (function () {
     icon: "🦎",
     colour: "#2a9a5a",
     howTo: "Hands up! Climb on the spot! Lean to steer!\nWhen a cat or crow comes: FREEZE and hide!\nStay close together.",
+    keysHowTo: "Hold W (Player 1) or ⬆ (Player 2) to climb.\nAdd A / D or ⬅ / ➡ to steer.\nWhen a cat or crow comes: let go to FREEZE and hide!",
     introArt: "games/art/climb-together-pose.svg",   // two players, hands up, sensor on the wrist
+    keysArt: "games/art/climb-together-keys.svg",     // keyboard mode (online): the keys to press
     menuArt: "games/art/climb-together-menu.jpg",
     fullScreen: true,
     needs: "motion",
@@ -13083,7 +13305,7 @@ const ORDER = [
   "docs/making-games/README.md", "docs/making-games/storyboards.md",
   "docs/making-games/sensor-and-feel.md", "docs/making-games/testing.md",
   "storyboards/fly-together/README.md", "storyboards/climb-together/README.md", "storyboards/crow-model/README.md", "streamdeck/README.txt",
-  "config.js", "heartbeat-games.html", "js/app.js", "js/sensor.js",
+  "config.js", "heartbeat-games.html", "index.html", "js/app.js", "js/keyboard.js", "js/sensor.js",
   "games/fly-together.js", "games/lib/flight.js", "games/lib/flight3d.js", "games/lib/crow.js", "games/lib/photo-finish.js", "games/lib/glow.js",
   "games/climb-together.js", "games/lib/climb3d.js", "games/lib/chameleon.js", "games/lib/cat.js", "games/lib/creature-kit.js",
   "blender/build_crow.py", "blender/export_crow.py", "tools/crow-skeleton.cjs",
@@ -13252,6 +13474,69 @@ MIT License; it is not part of Heartbeat Games.
 
 ---
 
+## File: games/art/climb-together-keys.svg
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="Segoe UI, system-ui, sans-serif">
+  <!--
+    Climb Together's START screen picture in keyboard mode (the "play online" version): which keys each
+    player presses. Orange = Player 1, purple = Player 2 (their colours on screen); the keys they use are filled in.
+    Made by a one-off script; plain SVG, edit it in any vector app.
+  -->
+  <g>
+    <text x="250" y="58" text-anchor="middle" font-size="34" font-weight="800" fill="#e0662b">Player 1</text>
+    <g transform="translate(250 150)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#e0662b" stroke="#e0662b" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">W</text>
+    </g>
+    <g transform="translate(146 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#e0662b" stroke="#e0662b" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">A</text>
+    </g>
+    <g transform="translate(250 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">S</text>
+    </g>
+    <g transform="translate(354 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#e0662b" stroke="#e0662b" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">D</text>
+    </g>
+    <text x="250" y="362" text-anchor="middle" font-size="26" fill="#6c6472">hold W to climb · add A or D to steer</text>
+  </g>
+  <g>
+    <text x="710" y="58" text-anchor="middle" font-size="34" font-weight="800" fill="#7a4fd6">Player 2</text>
+    <g transform="translate(710 150)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#7a4fd6" stroke="#7a4fd6" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">↑</text>
+    </g>
+    <g transform="translate(606 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#7a4fd6" stroke="#7a4fd6" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">←</text>
+    </g>
+    <g transform="translate(710 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">↓</text>
+    </g>
+    <g transform="translate(814 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#7a4fd6" stroke="#7a4fd6" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">→</text>
+    </g>
+    <text x="710" y="362" text-anchor="middle" font-size="26" fill="#6c6472">hold ↑ to climb · add ← or → to steer</text>
+  </g>
+  <text x="480" y="420" text-anchor="middle" font-size="24" fill="#6c6472">let go of the keys to freeze and hide</text>
+</svg>
+```
+
+---
+
 ## File: games/art/climb-together-pose.svg
 
 ```svg
@@ -13328,6 +13613,69 @@ MIT License; it is not part of Heartbeat Games.
     <use href="#climber"/>
     <text x="0" y="432" text-anchor="middle" font-size="34" font-weight="800" stroke="none">Player 2</text>
   </g>
+</svg>
+```
+
+---
+
+## File: games/art/fly-together-keys.svg
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" font-family="Segoe UI, system-ui, sans-serif">
+  <!--
+    Fly Together's START screen picture in keyboard mode (the "play online" version): which keys each
+    player presses. Orange = Player 1, purple = Player 2 (their colours on screen); the keys they use are filled in.
+    Made by a one-off script; plain SVG, edit it in any vector app.
+  -->
+  <g>
+    <text x="250" y="58" text-anchor="middle" font-size="34" font-weight="800" fill="#e0662b">Player 1</text>
+    <g transform="translate(250 150)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">W</text>
+    </g>
+    <g transform="translate(146 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#e0662b" stroke="#e0662b" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">A</text>
+    </g>
+    <g transform="translate(250 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">S</text>
+    </g>
+    <g transform="translate(354 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#e0662b" stroke="#e0662b" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">D</text>
+    </g>
+    <text x="250" y="362" text-anchor="middle" font-size="26" fill="#6c6472">A and D tilt your bird</text>
+  </g>
+  <g>
+    <text x="710" y="58" text-anchor="middle" font-size="34" font-weight="800" fill="#7a4fd6">Player 2</text>
+    <g transform="translate(710 150)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">↑</text>
+    </g>
+    <g transform="translate(606 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#7a4fd6" stroke="#7a4fd6" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">←</text>
+    </g>
+    <g transform="translate(710 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#ffffff" stroke="#d8d0c4" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="#e7e0d5"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#b5ac9f">↓</text>
+    </g>
+    <g transform="translate(814 254)">
+      <rect x="-46" y="-46" width="92" height="92" rx="16" fill="#7a4fd6" stroke="#7a4fd6" stroke-width="4"/>
+      <rect x="-46" y="38" width="92" height="8" rx="4" fill="rgba(0,0,0,.18)"/>
+      <text y="16" text-anchor="middle" font-size="44" font-weight="800" fill="#ffffff">→</text>
+    </g>
+    <text x="710" y="362" text-anchor="middle" font-size="26" fill="#6c6472">← and → tilt your bird</text>
+  </g>
+  <text x="480" y="420" text-anchor="middle" font-size="24" fill="#6c6472">fly close together to go faster</text>
 </svg>
 ```
 
@@ -13675,4 +14023,40 @@ HG.registerGame({
     }
   });
 })();
+```
+
+---
+
+## File: images/download-button.svg
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="56" viewBox="0 0 360 56" role="img" aria-label="Download Heartbeat Games (.zip)">
+  <!-- The "Download" button shown in README.md. It's only a picture; the link around it in the
+       README does the downloading. Colours: the games' orange (Player 1) and cream. -->
+  <title>Download Heartbeat Games (.zip)</title>
+  <rect x="1" y="1" width="358" height="54" rx="12" fill="#e0662b" stroke="#b44d1c" stroke-width="2"/>
+  <!-- download arrow -->
+  <g fill="none" stroke="#f3efe8" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 15 v18"/>
+    <path d="M24 26 l8 8 l8 -8"/>
+    <path d="M22 40 h20"/>
+  </g>
+  <text x="56" y="34" fill="#f3efe8" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="19" font-weight="700">Download Heartbeat Games</text>
+</svg>
+```
+
+---
+
+## File: images/play-online-button.svg
+
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="56" viewBox="0 0 360 56" role="img" aria-label="Play Heartbeat Games online">
+  <!-- The "Play online" button shown in README.md. It's only a picture; the link around it in the
+       README opens the GitHub Pages site. Colours: the games' purple (Player 2) and cream. -->
+  <title>Play Heartbeat Games online</title>
+  <rect x="1" y="1" width="358" height="54" rx="12" fill="#7a4fd6" stroke="#5b37a8" stroke-width="2"/>
+  <!-- play arrow -->
+  <path d="M25 16 L43 28 L25 40 Z" fill="#f3efe8"/>
+  <text x="56" y="34" fill="#f3efe8" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="19" font-weight="700">Play online: no install</text>
+</svg>
 ```

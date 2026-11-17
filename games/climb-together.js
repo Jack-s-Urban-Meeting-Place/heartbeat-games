@@ -295,7 +295,9 @@
     words() {
       const together = this.decided ? this.activeCount > 1 : this.players.filter((p) => p.connected).length > 1;
       const current = { hands: 0, climb: 1, left: 2, right: 3, freeze: 4 }[this.step];
-      const lines = [together ? "Both of you: hands up, hold still ✋" : "Hands up, hold still ✋", "Climb on the spot! 🧗", "Climb to the left ⬅", "Climb to the right ➡", "Freeze! 🧊"];
+      const lines = HG.keyboardMode                                    // (keyboard mode, online: which keys to press)
+        ? ["Hands off the keys ✋", "Climb: hold W or ⬆ 🧗", "Climb left: W + A, or ⬆ + ⬅", "Climb right: W + D, or ⬆ + ➡", "Freeze! Let go 🧊"]
+        : [together ? "Both of you: hands up, hold still ✋" : "Hands up, hold still ✋", "Climb on the spot! 🧗", "Climb to the left ⬅", "Climb to the right ➡", "Freeze! 🧊"];
       let list = "";
       if (current !== undefined) {
         list = lines.map((text, i) => {
@@ -433,7 +435,9 @@
     icon: "🦎",
     colour: "#2a9a5a",
     howTo: "Hands up! Climb on the spot! Lean to steer!\nWhen a cat or crow comes: FREEZE and hide!\nStay close together.",
+    keysHowTo: "Hold W (Player 1) or ⬆ (Player 2) to climb.\nAdd A / D or ⬅ / ➡ to steer.\nWhen a cat or crow comes: let go to FREEZE and hide!",
     introArt: "games/art/climb-together-pose.svg",   // two players, hands up, sensor on the wrist
+    keysArt: "games/art/climb-together-keys.svg",     // keyboard mode (online): the keys to press
     menuArt: "games/art/climb-together-menu.jpg",
     fullScreen: true,
     needs: "motion",

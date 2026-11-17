@@ -1,4 +1,4 @@
-HEARTBEAT GAMES  (version 2.29.0; the version also shows in the corner of the screen)
+HEARTBEAT GAMES  (version 2.30.0; the version also shows in the corner of the screen)
 =================================================================================
 
 FOR THE VOLUNTEER
@@ -23,6 +23,8 @@ INSTALLING ON A NEW LAPTOP (once)
 
 WHAT'S IN THE FOLDER
   heartbeat-games.html    the games page (layout and styling)
+  index.html              the "play online" version: the same games played with the keyboard, no sensors
+                            (also on the web: https://jack-s-urban-meeting-place.github.io/heartbeat-games/)
   config.js               SETTINGS: sensor IDs, sample rate, round length
   js\sensor.js            connecting to the sensors (proven; change rarely)
   js\app.js               the shell: setup, menu, buttons, reconnecting, game runner
